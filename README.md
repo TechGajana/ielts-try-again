@@ -46,3 +46,45 @@ git status   # double check .env.local is NOT listed
 git commit -m "Phase 0: project scaffold + Firebase/R2/OpenAI wiring"
 git push
 
+Phase 2:
+Step 1:
+npm install resend
+get resend api key
+
+Step 2: Create One Test Student (manually, via a one-off script)
+scripts/create-test-student.ts
+
+npm install -D tsx
+npx tsx scripts/create-test-student.ts
+
+Step 3:
+src/lib/firebase-rest.ts
+
+Step 4:
+src/lib/otp.ts
+
+Step 5:
+src/app/login/actions.ts
+
+Step 6:
+src/app/api/auth/session/route.ts
+
+Step 7:
+src/app/login/page.tsx
+
+src/app/login/otp/page.tsx
+
+Step 8:
+middleware.ts
+
+Step 9:
+src/app/dashboard/layout.tsx
+
+src/app/dashboard/page.tsx
+
+Step 10:
+npm run dev
+
+
+
+

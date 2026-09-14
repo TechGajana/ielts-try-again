@@ -55,7 +55,7 @@ Step 2: Create One Test Student (manually, via a one-off script)
 scripts/create-test-student.ts
 
 npm install -D tsx
-npx tsx scripts/create-test-student.ts
+npx tsx --env-file=.env.local scripts/create-test-student.ts
 
 Step 3:
 src/lib/firebase-rest.ts

@@ -120,3 +120,29 @@ src/app/practice/reading/[type]/[taskId]/ReadingAttemptClient.tsx
 Step 6:
 npm run dev
 
+Phase 3:
+Step 1:
+src/lib/r2-presign.ts
+
+Step 2:
+scripts/assets/test-audio.mp3
+scripts/upload-test-audio.ts
+
+Step 3:
+scripts/seed-listening.ts
+
+Step 4:
+src/app/practice/listening/page.tsx
+
+Step 5:
+src/app/practice/listening/[type]/page.tsx
+
+Step 6:
+src/app/practice/listening/[type]/[taskId]/actions.ts
+
+Step 7:
+src/app/practice/listening/[type]/[taskId]/page.tsx
+src/app/practice/listening/[type]/[taskId]/ListeningAttemptClient.tsx
+
+Step 8:
+npm run dev

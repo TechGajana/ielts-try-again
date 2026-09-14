@@ -1,0 +1,55 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "readingTasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "questionType", "order": "ASCENDING" },
+        { "fieldPath": "taskNumber", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "listeningTasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "questionType", "order": "ASCENDING" },
+        { "fieldPath": "taskNumber", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "questionType", "order": "ASCENDING" },
+        { "fieldPath": "module", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "taskId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "writingPrompts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "taskPart", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "questionNumber", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "module", "order": "ASCENDING" },
+        { "fieldPath": "taskId", "order": "ASCENDING" }
+      ]
+    }
+  ]
+}

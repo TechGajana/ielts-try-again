@@ -1,3 +1,4 @@
+Phase 0:
 Step 1:
 npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
 
@@ -46,7 +47,12 @@ git status   # double check .env.local is NOT listed
 git commit -m "Phase 0: project scaffold + Firebase/R2/OpenAI wiring"
 git push
 
-Phase 2:
+
+
+---
+
+
+Phase 1:
 Step 1:
 npm install resend
 get resend api key
@@ -85,6 +91,32 @@ src/app/dashboard/page.tsx
 Step 10:
 npm run dev
 
+---
 
 
+
+
+Phase 2:
+Step 1:
+scripts/seed-reading.ts
+npx tsx --env-file=.env.local scripts/seed-reading.ts
+
+Step 2: 
+src/types/reading.ts
+
+Step 3: 
+src/app/practice/reading/page.tsx
+
+Step 4:
+src/app/practice/reading/[type]/page.tsx
+
+Step 5:
+src/app/practice/reading/[type]/[taskId]/actions.ts
+
+src/app/practice/reading/[type]/[taskId]/page.tsx
+
+src/app/practice/reading/[type]/[taskId]/ReadingAttemptClient.tsx
+
+Step 6:
+npm run dev
 

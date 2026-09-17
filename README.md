@@ -146,3 +146,36 @@ src/app/practice/listening/[type]/[taskId]/ListeningAttemptClient.tsx
 
 Step 8:
 npm run dev
+
+Phase 3.5:
+Step 1:
+A1 — Fix Reading's Stale-Attempt Bug
+A2 — Wipe Test Data Again (clean slate before retesting)
+A3 — Set Up Firestore Composite Indexes (batch, via CLI)
+
+Step 2:
+Log in: firebase login --no-localhost
+
+Step 3 — Initialize Firebase in your project (Firestore only)
+
+Step 4 — Replace firestore.indexes.json
+
+Step 5 — Deploy the indexes
+
+A4 — Retest Both Modules
+
+B — Shared Attempts Helper
+Step 1 — Create the shared helper
+Create src/lib/attempts.ts:
+
+Step 2 — Refactor Reading to use it
+Replace the contents of src/app/practice/reading/[type]/[taskId]/actions.ts:
+
+Step 3 — Refactor Listening the same way
+Replace src/app/practice/listening/[type]/[taskId]/actions.ts:
+
+Step 4 — Retest Both Modules
+
+Before Phase 4, Making a Light weight Admin Panel for demo and easy testing. This will be removed in the final version.
+scripts/set-admin-claim.ts
+

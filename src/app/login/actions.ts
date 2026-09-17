@@ -3,45 +3,54 @@
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { verifyPasswordViaRest } from '@/lib/firebase-rest';
 import { createAndSendOtp, verifyOtp } from '@/lib/otp';
-import { cookies } from 'next/headers';
 
-export async function loginStep1(username: string, password: string) {
-  // 1. Look up email from username
+export async function loginStep1(usernameOrEmail: string, password: string) {
+  let email: string;
+  let uid: string;
+  let isAdmin = false;
+
+  // Try student username lookup first
   const snap = await adminDb
     .collection('students')
-    .where('username', '==', username)
+    .where('username', '==', usernameOrEmail)
     .limit(1)
     .get();
 
-  if (snap.empty) throw new Error('Invalid username or password.');
-
-  const studentDoc = snap.docs[0];
-  const { email, accountStatus } = studentDoc.data();
-
-  if (accountStatus !== 'active') {
-    throw new Error('Account is not active. Contact your administrator.');
+  if (!snap.empty) {
+    const studentDoc = snap.docs[0];
+    const data = studentDoc.data();
+    if (data.accountStatus !== 'active') {
+      throw new Error('Account is not active. Contact your administrator.');
+    }
+    email = data.email;
+    uid = studentDoc.id;
+  } else {
+    // Fall back: treat input as an admin email
+    try {
+      const userRecord = await adminAuth.getUserByEmail(usernameOrEmail);
+      const claims = userRecord.customClaims;
+      if (claims?.role !== 'admin') throw new Error('not admin');
+      email = usernameOrEmail;
+      uid = userRecord.uid;
+      isAdmin = true;
+    } catch {
+      throw new Error('Invalid username or password.');
+    }
   }
 
-  // 2. Verify password
   try {
     await verifyPasswordViaRest(email, password);
   } catch {
     throw new Error('Invalid username or password.');
   }
 
-  // 3. Send OTP
-  await createAndSendOtp(studentDoc.id, email);
+  await createAndSendOtp(uid, email);
 
-  return { uid: studentDoc.id }; // pass this to the OTP step
+  return { uid, isAdmin };
 }
 
 export async function loginStep2(uid: string, otp: string) {
   await verifyOtp(uid, otp);
-
-  // Create a Firebase custom token, then a session cookie
   const customToken = await adminAuth.createCustomToken(uid);
-
-  // We'll exchange this for an ID token client-side, then call a route
-  // to set the session cookie. See Step 6.
   return { customToken };
 }

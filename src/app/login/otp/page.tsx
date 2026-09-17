@@ -29,8 +29,10 @@ export default function OtpPage() {
         body: JSON.stringify({ idToken }),
       });
 
+      const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
       sessionStorage.removeItem('pendingUid');
-      router.push('/dashboard');
+      sessionStorage.removeItem('isAdmin');
+      router.push(isAdmin ? '/admin' : '/dashboard');
     } catch (err: any) {
       setError(err.message);
     }

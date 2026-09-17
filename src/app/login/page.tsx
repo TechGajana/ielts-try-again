@@ -14,8 +14,9 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      const { uid } = await loginStep1(username, password);
+      const { uid, isAdmin } = await loginStep1(username, password);
       sessionStorage.setItem('pendingUid', uid);
+      sessionStorage.setItem('isAdmin', String(isAdmin));
       router.push('/login/otp');
     } catch (err: any) {
       setError(err.message);

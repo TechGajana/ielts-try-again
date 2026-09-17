@@ -1,7 +1,7 @@
 import { adminAuth, adminDb } from '../src/lib/firebase-admin';
 
 async function main() {
-  const email = 'ieltstryagain@example.com'; // use an email you can actually check
+  const email = 'teamtechmads75k@gmail.com'; // use an email you can actually check
   const password = 'TestPass123!';
 
   const userRecord = await adminAuth.createUser({

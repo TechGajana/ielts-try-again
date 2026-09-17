@@ -1,6 +1,6 @@
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getAttemptCounts } from '@/lib/attempts';
 import Link from 'next/link';
 
 async function getStudentId() {
@@ -25,19 +25,7 @@ export default async function ReadingTaskListPage({
     .get();
 
   const tasks = tasksSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-  // Get attempt counts for this student across these tasks
-  const attemptsSnap = await adminDb
-    .collection('attempts')
-    .where('studentId', '==', studentId)
-    .where('questionType', '==', questionType)
-    .get();
-
-  const attemptCounts: Record<string, number> = {};
-  attemptsSnap.docs.forEach((doc) => {
-    const { taskId } = doc.data();
-    attemptCounts[taskId] = (attemptCounts[taskId] || 0) + 1;
-  });
+  const attemptCounts = await getAttemptCounts(studentId, 'reading', questionType);
 
   return (
     <div className="p-8">

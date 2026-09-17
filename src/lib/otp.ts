@@ -18,7 +18,7 @@ export async function createAndSendOtp(uid: string, email: string) {
   });
 
   await resend.emails.send({
-    from: 'IELTS Try Again <onboarding@resend.dev>',
+    from: 'IELTS Try Again <noreply@mail.ieltstryagain.com>',
     to: email,
     subject: 'Your Login OTP',
     text: `Your OTP is: ${code}. It expires in 5 minutes.`,

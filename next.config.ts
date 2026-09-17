@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: [
+    'firebase-admin',
+    'jwks-rsa',
+    'jose',
+    '@firebase/database-compat',
+    '@firebase/database',
+  ],
   reactCompiler: true,
   experimental: {
     serverActions: {

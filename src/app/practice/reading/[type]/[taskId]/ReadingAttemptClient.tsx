@@ -42,8 +42,11 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
   const inFlight = useRef(false); // guards against double submits (button click + timer)
   const router = useRouter();
 
+  useEffect(() => {
     startAttempt(task.id, questionType).then(({ attemptId, startTime }) => {
       setAttemptId(attemptId);
+      const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
+      const remaining = Math.max(0, task.timerMinutes * 60 - elapsed);
       setSecondsLeft(Math.floor(remaining));
     });
   }, [task.id, questionType]);

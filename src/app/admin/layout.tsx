@@ -1,14 +1,9 @@
 import { cookies } from 'next/headers';
-<<<<<<< HEAD
 import Link from 'next/link';
 import { adminAuth } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import { ArrowUpRight, GraduationCap } from 'lucide-react';
 import AdminNav from '@/components/admin/admin-nav';
-=======
-import { adminAuth } from '@/lib/firebase-admin';
-import { redirect } from 'next/navigation';
->>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const sessionCookie = (await cookies()).get('session')?.value;
@@ -18,7 +13,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!decoded || decoded.role !== 'admin') redirect('/login');
 
   return (
-<<<<<<< HEAD
     <div className="min-h-svh bg-muted/30 text-foreground lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
       <aside className="flex flex-col border-b bg-background lg:sticky lg:top-0 lg:h-svh lg:border-b-0 lg:border-r">
         <div className="flex h-16 items-center gap-3 px-5">
@@ -47,17 +41,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="min-w-0 px-6 py-8 lg:px-10 lg:py-10">
         <div className="mx-auto max-w-5xl">{children}</div>
       </main>
-=======
-    <div className="min-h-screen flex">
-      <aside className="w-56 bg-gray-900 text-white p-4 space-y-2">
-        <h2 className="font-semibold mb-4">QAnix Admin</h2>
-        <a href="/admin" className="block py-1 hover:underline">Dashboard</a>
-        <a href="/admin/content/reading" className="block py-1 hover:underline">Reading Content</a>
-        <a href="/admin/content/listening" className="block py-1 hover:underline">Listening Content</a>
-        <a href="/admin/students" className="block py-1 hover:underline">Students</a>
-      </aside>
-      <main className="flex-1">{children}</main>
->>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
     </div>
   );
 }

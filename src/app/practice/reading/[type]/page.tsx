@@ -2,13 +2,10 @@ import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 import { getAttemptCounts } from '@/lib/attempts';
 import Link from 'next/link';
-<<<<<<< HEAD
 import { ArrowUpRight, Lock } from 'lucide-react';
 import { PracticeShell } from '@/components/practice/practice-shell';
 
 const MAX_ATTEMPTS = 3;
-=======
->>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
 
 async function getStudentId() {
   const sessionCookie = (await cookies()).get('session')?.value!;
@@ -31,7 +28,6 @@ export default async function ReadingTaskListPage({
     .orderBy('taskNumber')
     .get();
 
-<<<<<<< HEAD
   const tasks = tasksSnap.docs.map((d) => ({
     id: d.id,
     ...(d.data() as { taskNumber: number }),
@@ -130,32 +126,5 @@ export default async function ReadingTaskListPage({
         </ul>
       )}
     </PracticeShell>
-=======
-  const tasks = tasksSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  const attemptCounts = await getAttemptCounts(studentId, 'reading', questionType);
-
-  return (
-    <div className="p-8">
-      <h1 className="text-xl font-semibold mb-6">{questionType}</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tasks.map((task: any) => {
-          const used = attemptCounts[task.id] || 0;
-          const locked = used >= 3;
-          return (
-            <Link
-              key={task.id}
-              href={locked ? '#' : `/practice/reading/${type}/${task.id}`}
-              className={`border rounded-lg p-6 ${
-                locked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'
-              }`}
-            >
-              <h3 className="font-medium">Task {task.taskNumber}</h3>
-              <p className="text-sm text-gray-500">{used}/3 attempts used</p>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
->>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
   );
 }

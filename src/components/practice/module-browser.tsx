@@ -154,7 +154,9 @@ export default function ModuleBrowser({
     const extra = Object.keys(progress)
       .filter((name) => !known.has(name))
       .sort();
-    return extra.length ? [...groups, { title: 'Other', types: extra.map((name) => ({ name })) }] : groups;
+    return extra.length
+      ? [...groups, { title: 'Other', types: extra.map((name): ModuleGroup['types'][number] => ({ name })) }]
+      : groups;
   }, [groups, progress]);
 
   const allTypes = allGroups.flatMap((g) => g.types);

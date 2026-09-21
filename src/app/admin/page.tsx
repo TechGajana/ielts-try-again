@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import Link from 'next/link';
 import { Activity, ArrowUpRight, BookOpen, Headphones, Users, type LucideIcon } from 'lucide-react';
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
@@ -166,4 +167,8 @@ export default async function AdminHomePage() {
       </div>
     </>
   );
+=======
+export default function AdminHomePage() {
+  return <div className="p-8"><h1 className="text-2xl font-semibold">Admin Dashboard</h1></div>;
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
 }

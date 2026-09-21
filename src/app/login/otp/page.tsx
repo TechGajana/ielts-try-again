@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+<<<<<<< HEAD
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithCustomToken } from 'firebase/auth';
@@ -29,12 +30,25 @@ export default function OtpPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // UI only: disables the button while verifying
   const [focused, setFocused] = useState(false); // UI only: highlights the active digit box
+=======
+import { useRouter } from 'next/navigation';
+import { signInWithCustomToken } from 'firebase/auth';
+import { clientAuth } from '@/lib/firebase-client';
+import { loginStep2 } from '../actions';
+
+export default function OtpPage() {
+  const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+<<<<<<< HEAD
     setLoading(true);
+=======
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
     try {
       const uid = sessionStorage.getItem('pendingUid');
       if (!uid) throw new Error('Session expired. Please login again.');
@@ -56,6 +70,7 @@ export default function OtpPage() {
       router.push(isAdmin ? '/admin' : '/dashboard');
     } catch (err: any) {
       setError(err.message);
+<<<<<<< HEAD
       setLoading(false);
     }
   }
@@ -208,5 +223,24 @@ export default function OtpPage() {
         </div>
       </section>
     </main>
+=======
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <form onSubmit={handleSubmit} className="w-80 space-y-4">
+        <h1 className="text-xl font-semibold text-center">Enter OTP</h1>
+        <input
+          className="w-full border rounded p-2"
+          placeholder="6-digit OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+        />
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+        <button className="w-full bg-black text-white rounded p-2">Verify</button>
+      </form>
+    </div>
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+<<<<<<< HEAD
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -33,13 +34,22 @@ function TopBar({ questionType, title, children }: { questionType: string; title
   );
 }
 
+=======
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { startAttempt, submitAttempt } from './actions';
+
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
 export default function ReadingAttemptClient({ task, questionType }: { task: any; questionType: string }) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<{ score: number; total: number } | null>(null);
+<<<<<<< HEAD
   const [submitting, setSubmitting] = useState(false); // UI only: spinner on the submit buttons
   const inFlight = useRef(false); // guards against double submits (button click + timer)
+=======
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
   const router = useRouter();
 
   useEffect(() => {
@@ -52,6 +62,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
   }, [task.id, questionType]);
 
   const handleSubmit = useCallback(async () => {
+<<<<<<< HEAD
     if (!attemptId || submitted || inFlight.current) return;
     inFlight.current = true;
     setSubmitting(true);
@@ -62,6 +73,11 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
       inFlight.current = false;
       setSubmitting(false);
     }
+=======
+    if (!attemptId || submitted) return;
+    const result = await submitAttempt(attemptId, task.id, answers);
+    setSubmitted(result);
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
   }, [attemptId, answers, task.id, submitted]);
 
   useEffect(() => {
@@ -74,6 +90,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
     return () => clearTimeout(timer);
   }, [secondsLeft, submitted, handleSubmit]);
 
+<<<<<<< HEAD
   /* ───────── Loading ───────── */
   if (secondsLeft === null) {
     return (
@@ -175,10 +192,40 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
             </Link>
           </div>
         </main>
+=======
+  if (secondsLeft === null) return <div className="p-8">Loading...</div>;
+
+  if (submitted) {
+    return (
+      <div className="p-8">
+        <h1 className="text-xl font-semibold mb-4">
+          Score: {submitted.score}/{submitted.total}
+        </h1>
+        {task.questions.map((q: any) => {
+          const isCorrect = answers[q.id] === task.correctAnswers[q.id];
+          return (
+            <div key={q.id} className="mb-3 border-b pb-2">
+              <p>{q.text}</p>
+              {isCorrect ? (
+                <p className="text-green-600">Correct</p>
+              ) : (
+                <>
+                  <p className="text-red-600">Your Answer: {answers[q.id] || '(no answer)'}</p>
+                  <p className="text-gray-700">Correct Answer: {task.correctAnswers[q.id]}</p>
+                </>
+              )}
+            </div>
+          );
+        })}
+        <button onClick={() => router.push('/practice/reading')} className="mt-4 bg-black text-white rounded px-4 py-2">
+          Back to Reading
+        </button>
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
       </div>
     );
   }
 
+<<<<<<< HEAD
   /* ───────── Attempt ───────── */
   const total = task.questions.length;
   const answeredCount = task.questions.filter((q: any) => answers[q.id]?.trim()).length;
@@ -308,6 +355,56 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
             </div>
           </div>
         </section>
+=======
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+
+  return (
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-semibold">
+          {questionType} — Task {task.taskNumber}
+        </h1>
+        <div className="text-lg font-mono bg-gray-100 px-3 py-1 rounded">
+          {mins}:{secs.toString().padStart(2, '0')}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-8">
+        <div className="prose max-w-none whitespace-pre-wrap">{task.passage}</div>
+        <div>
+          <p className="mb-4 text-sm text-gray-600">{task.instructions}</p>
+          {task.questions.map((q: any) => (
+            <div key={q.id} className="mb-4">
+              <p className="mb-2">{q.text}</p>
+              {q.options ? (
+                q.options.map((opt: string) => (
+                  <label key={opt} className="block">
+                    <input
+                      type="radio"
+                      name={q.id}
+                      value={opt}
+                      checked={answers[q.id] === opt}
+                      onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                      className="mr-2"
+                    />
+                    {opt}
+                  </label>
+                ))
+              ) : (
+                <input
+                  className="border rounded p-2 w-full"
+                  value={answers[q.id] || ''}
+                  onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
+                />
+              )}
+            </div>
+          ))}
+          <button onClick={handleSubmit} className="bg-black text-white rounded px-4 py-2">
+            Submit
+          </button>
+        </div>
+>>>>>>> 71d9a4ff2580737881c1d12e6324e871d2954744
       </div>
     </div>
   );

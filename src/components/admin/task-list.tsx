@@ -1,4 +1,5 @@
 import { Clock, ListChecks, Music } from 'lucide-react';
+import type { ReactNode } from 'react';
 import DeleteTaskButton from './delete-task-button';
 
 export type AdminTask = {
@@ -14,10 +15,12 @@ export default function TaskList({
   tasks,
   types,
   deleteAction,
+  renderEdit,
 }: {
   tasks: AdminTask[];
   types: readonly string[];
   deleteAction: (taskId: string) => Promise<void>;
+  renderEdit?: (task: AdminTask) => ReactNode;
 }) {
   if (tasks.length === 0) {
     return (
@@ -70,10 +73,13 @@ export default function TaskList({
                   </div>
                 </div>
 
-                <DeleteTaskButton
-                  action={deleteAction.bind(null, t.id)}
-                  label={`${type} task ${t.taskNumber}`}
-                />
+                <div className="flex shrink-0 items-center gap-1">
+                  {renderEdit?.(t)}
+                  <DeleteTaskButton
+                    action={deleteAction.bind(null, t.id)}
+                    label={`${type} task ${t.taskNumber}`}
+                  />
+                </div>
               </li>
             ))}
           </ul>

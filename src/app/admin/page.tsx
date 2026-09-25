@@ -22,11 +22,13 @@ function StatCard({
   icon: Icon,
   label,
   value,
+  sublabel,
   href,
 }: {
   icon: LucideIcon;
   label: string;
   value?: number;
+  sublabel?: string;
   href?: string;
 }) {
   const inner = (
@@ -47,6 +49,7 @@ function StatCard({
         <p className={`text-sm text-muted-foreground ${value !== undefined ? 'mt-0.5' : 'text-base font-medium text-foreground'}`}>
           {label}
         </p>
+        {sublabel && <p className="mt-1 text-xs text-muted-foreground">{sublabel}</p>}
       </div>
     </>
   );
@@ -130,11 +133,17 @@ function CoveragePanel({
 }
 
 export default async function AdminHomePage() {
-  const [readingSnap, listeningSnap, attemptsCount] = await Promise.all([
+  const [readingSnap, listeningSnap, attemptsCount, studentsCount, activeStudentsCount] = await Promise.all([
     adminDb.collection('readingTasks').select('questionType').get(),
     adminDb.collection('listeningTasks').select('questionType').get(),
     adminDb.collection('attempts').count().get(),
+    adminDb.collection('students').count().get(),
+    adminDb.collection('students').where('accountStatus', '==', 'active').count().get(),
   ]);
+
+  const totalStudents = studentsCount.data().count;
+  const activeStudents = activeStudentsCount.data().count;
+  const suspendedStudents = totalStudents - activeStudents;
 
   return (
     <>
@@ -147,7 +156,13 @@ export default async function AdminHomePage() {
         <StatCard icon={BookOpen} label="Reading tasks" value={readingSnap.size} href="/admin/content/reading" />
         <StatCard icon={Headphones} label="Listening tasks" value={listeningSnap.size} href="/admin/content/listening" />
         <StatCard icon={Activity} label="Attempts so far" value={attemptsCount.data().count} />
-        <StatCard icon={Users} label="Students" href="/admin/students" />
+        <StatCard
+          icon={Users}
+          label="Active students"
+          value={activeStudents}
+          sublabel={`${totalStudents} total${suspendedStudents > 0 ? ` · ${suspendedStudents} suspended` : ''}`}
+          href="/admin/students"
+        />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">

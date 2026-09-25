@@ -39,7 +39,8 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<{ score: number; total: number } | null>(null);
   const [submitting, setSubmitting] = useState(false); // UI only: spinner on the submit buttons
-  const inFlight = useRef(false); // guards against double submits (button click + timer)
+  const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false); // UI only: shows a different message when the lock caused submission
+  const inFlight = useRef(false); // guards against double submits (button click + timer + tab switch)
   const router = useRouter();
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
     }
   }, [attemptId, answers, task.id, submitted]);
 
+  // Timer countdown, auto-submits when it hits zero
   useEffect(() => {
     if (secondsLeft === null || submitted) return;
     if (secondsLeft <= 0) {
@@ -73,6 +75,21 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
     const timer = setTimeout(() => setSecondsLeft((s) => (s ?? 1) - 1), 1000);
     return () => clearTimeout(timer);
   }, [secondsLeft, submitted, handleSubmit]);
+
+  // Tab-switch lock: leaving this tab auto-submits and uses one attempt
+  useEffect(() => {
+    if (submitted || secondsLeft === null) return;
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        setLockedByTabSwitch(true);
+        handleSubmit();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [submitted, secondsLeft, handleSubmit]);
 
   /* ───────── Loading ───────── */
   if (secondsLeft === null) {
@@ -115,6 +132,15 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
               <p className="mt-3 text-sm text-primary-foreground/70">{percent}% correct</p>
             </div>
           </section>
+
+          {lockedByTabSwitch && (
+            <div
+              role="alert"
+              className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
+            >
+              This attempt was submitted automatically because you switched away from the tab.
+            </div>
+          )}
 
           <section className="mt-10" aria-labelledby="review-heading">
             <h2 id="review-heading" className="font-serif text-2xl tracking-tight">
@@ -211,11 +237,18 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
         </button>
       </TopBar>
 
+      <div
+        role="alert"
+        className="border-b bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive sm:px-6"
+      >
+        Stay on this tab. Switching away will submit your answers immediately and use one attempt.
+      </div>
+
       <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
         {/* Passage */}
         <section
           aria-label="Reading passage"
-          className="border-b px-6 py-8 lg:h-[calc(100svh-4rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
+          className="border-b px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
         >
           <div className="mx-auto max-w-prose whitespace-pre-wrap font-serif text-[1.0625rem] leading-8">
             {task.passage}
@@ -225,7 +258,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
         {/* Questions */}
         <section
           aria-label="Questions"
-          className="px-6 py-8 lg:h-[calc(100svh-4rem)] lg:overflow-y-auto lg:px-10"
+          className="px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:overflow-y-auto lg:px-10"
         >
           <div className="mx-auto max-w-xl">
             {task.instructions && (

@@ -4,6 +4,7 @@ import { createReadingTask, deleteReadingTask } from './actions';
 import { AddTaskPanel, Field, PageHeader, QuestionsSection, TaskBasics, inputClass, textareaClass } from '@/components/admin/ui';
 import SubmitButton from '@/components/admin/submit-button';
 import TaskList, { type AdminTask } from '@/components/admin/task-list';
+import EditReadingTaskDialog from './EditReadingTaskDialog';
 
 export default async function AdminReadingContentPage() {
   // Uses the questionType + taskNumber composite index already in firestore.indexes.json
@@ -61,7 +62,12 @@ export default async function AdminReadingContentPage() {
       </AddTaskPanel>
 
       <h2 className="mb-5 text-lg font-semibold tracking-tight">Existing tasks ({tasks.length})</h2>
-      <TaskList tasks={tasks} types={READING_QUESTION_TYPES} deleteAction={deleteReadingTask} />
+      <TaskList
+        tasks={tasks}
+        types={READING_QUESTION_TYPES}
+        deleteAction={deleteReadingTask}
+        renderEdit={(t) => <EditReadingTaskDialog taskId={t.id} label={`${t.questionType} task ${t.taskNumber}`} />}
+      />
     </>
   );
 }

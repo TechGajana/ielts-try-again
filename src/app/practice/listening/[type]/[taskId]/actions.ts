@@ -11,10 +11,11 @@ async function getStudentId() {
   return decoded.uid;
 }
 
-export async function startListeningAttempt(taskId: string, questionType: string, audioKey: string) {
+export async function startAttempt(taskId: string, questionType: string) {
   const studentId = await getStudentId();
   const taskDoc = await adminDb.collection('listeningTasks').doc(taskId).get();
-  const timerMinutes = taskDoc.data()?.timerMinutes ?? 8;
+  const data = taskDoc.data();
+  const timerMinutes = data?.timerMinutes ?? 8;
 
   const { attemptId, startTime } = await startAttemptShared({
     studentId,
@@ -25,15 +26,14 @@ export async function startListeningAttempt(taskId: string, questionType: string
     maxAttempts: 3,
   });
 
-  const audioUrl = await getPlaybackUrl(audioKey);
+  // Presigned playback URL is fetched fresh per attempt so it can't be
+  // reused after the 10-minute expiry set in r2-presign.ts
+  const audioUrl = await getPlaybackUrl(data!.audioKey as string);
+
   return { attemptId, startTime, audioUrl };
 }
 
-export async function submitListeningAttempt(
-  attemptId: string,
-  taskId: string,
-  answers: Record<string, string>
-) {
+export async function submitAttempt(attemptId: string, taskId: string, answers: Record<string, string>) {
   const taskDoc = await adminDb.collection('listeningTasks').doc(taskId).get();
   const { correctAnswers } = taskDoc.data()!;
   return submitAutoScoredAttempt(attemptId, correctAnswers, answers);

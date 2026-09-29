@@ -2,9 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
+
 import { motion , type Variants } from 'framer-motion';
 import {
   ArrowRight,
+  ArrowUpRight,
   BookOpen,
   ClipboardCheck,
   GraduationCap,
@@ -30,8 +32,8 @@ interface ModuleDef {
 const MODULES: ModuleDef[] = [
   { name: 'Reading', href: '/practice/reading', ready: true, icon: BookOpen, description: 'Read passages and answer questions by type.' },
   { name: 'Listening', href: '/practice/listening', ready: true, icon: Headphones, description: 'Listen to audio and answer questions by type.' },
-  { name: 'Writing', href: '/practice/writing', ready: false, icon: PenLine, description: 'Respond to Task 1 and Task 2 prompts.' },
-  { name: 'Speaking', href: '/practice/speaking', ready: false, icon: Mic, description: 'Practice speaking on common topics.' },
+  { name: 'Writing', href: '/practice/writing', ready: true, icon: PenLine, description: 'Respond to Task 1 and Task 2 prompts.' },
+  { name: 'Speaking', href: '/practice/speaking', ready: true, icon: Mic, description: 'Practice speaking on common topics.' },
 ];
 
 const BANDS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
@@ -196,25 +198,27 @@ const ModuleCard = ({ module }: { module: ModuleDef }) => {
 };
 
 const MockTestSection = () => (
-  <motion.section variants={fadeUp} className="mt-8">
-    <div className="group relative overflow-hidden rounded-2xl border border-dashed border-border bg-gradient-to-r from-muted/30 to-background p-6 transition-colors hover:border-primary/20 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between flex flex-col gap-6 sm:p-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 z-10">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-background shadow-sm ring-1 ring-border transition-transform group-hover:scale-105">
-          <ClipboardCheck className="size-6 text-muted-foreground" aria-hidden="true" />
+  <motion.section variants={fadeUp} className="mt-6">
+    <Link
+      href="/mock-tests"
+      className="group flex flex-col gap-4 rounded-xl border bg-card p-5 text-card-foreground transition-[box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          <ClipboardCheck className="size-5" aria-hidden />
         </div>
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">Full Mock Exam</h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Simulate real test conditions. Take all 4 modules back-to-back with strict timing.
+          <h2 className="text-lg font-medium tracking-tight">Full mock test</h2>
+          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+            Listening, Reading and Writing in one sitting. Each mock can be attempted once.
           </p>
         </div>
       </div>
-      <div className="z-10 shrink-0">
-        <span className="inline-flex items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-semibold text-muted-foreground ring-1 ring-border shadow-sm">
-          Development in progress
-        </span>
-      </div>
-    </div>
+      <ArrowUpRight
+        className="size-5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        aria-hidden
+      />
+    </Link>
   </motion.section>
 );
 
@@ -258,7 +262,7 @@ export default function DashboardPage() {
               <ModuleCard key={module.name} module={module} />
             ))}
           </ul>
-
+          
           <MockTestSection />
         </motion.div>
       </main>

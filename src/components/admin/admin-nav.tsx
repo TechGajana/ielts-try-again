@@ -2,12 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Headphones, LayoutDashboard, Users, type LucideIcon } from 'lucide-react';
+import {
+  BookOpen,
+  ClipboardCheck,
+  Headphones,
+  LayoutDashboard,
+  Mic,
+  PenLine,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 
 const ITEMS: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/content/reading', label: 'Reading content', icon: BookOpen },
   { href: '/admin/content/listening', label: 'Listening content', icon: Headphones },
+  { href: '/admin/content/writing', label: 'Writing content', icon: PenLine },
+  { href: '/admin/content/speaking', label: 'Speaking content', icon: Mic },
+  { href: '/admin/content/mock-tests', label: 'Mock tests', icon: ClipboardCheck },
   { href: '/admin/students', label: 'Students', icon: Users },
 ];
 

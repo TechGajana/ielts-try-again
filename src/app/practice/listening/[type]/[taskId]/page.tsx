@@ -8,7 +8,13 @@ export default async function ListeningAttemptPage({
 }) {
   const { type, taskId } = await params;
   const taskDoc = await adminDb.collection('listeningTasks').doc(taskId).get();
-  const task = { id: taskDoc.id, ...taskDoc.data() } as any;
+  const data = taskDoc.data()!;
+
+  // audioKey and correctAnswers are stripped here: audioKey is only needed
+  // server-side to sign a playback URL, and correctAnswers must never reach
+  // the browser before submission (same fix I flagged for Reading earlier).
+  const { audioKey: _audioKey, correctAnswers: _correctAnswers, ...safeTask } = data;
+  const task = { id: taskDoc.id, ...safeTask } as any;
 
   return <ListeningAttemptClient task={task} questionType={decodeURIComponent(type)} />;
 }

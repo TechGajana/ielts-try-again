@@ -19,6 +19,7 @@ type Props = {
   sectionIcon: LucideIcon; // small icon beside each group label
   groups: ModuleGroup[];
   progress: Progress;
+  slugs?: Record<string, string>;
 };
 
 const BADGE: Record<Difficulty, string> = {
@@ -121,6 +122,7 @@ function TypeRow({
 
 export default function ModuleBrowser({
   basePath,
+  slugs,
   title,
   description,
   masteryLabel,
@@ -182,7 +184,7 @@ export default function ModuleBrowser({
     .map((g) => ({ ...g, types: g.types.filter((t) => t.name.toLowerCase().includes(q)) }))
     .filter((g) => g.types.length > 0);
 
-  const hrefFor = (name: string) => `${basePath}/${encodeURIComponent(name)}`;
+  const hrefFor = (name: string) => `${basePath}/${slugs?.[name] ?? encodeURIComponent(name)}`;
 
   return (
     <div className="min-h-svh bg-background text-foreground">

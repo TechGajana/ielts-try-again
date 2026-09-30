@@ -128,3 +128,7 @@
     @apply font-sans;
   }
 }
+.no-copy {
+  user-select: none;
+  -webkit-user-select: none;
+}

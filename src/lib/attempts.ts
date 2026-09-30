@@ -86,6 +86,8 @@ export async function startAttemptShared(params: StartAttemptParams): Promise<St
 /**
  * Submits an attempt for auto-scored modules (Reading/Listening) —
  * compares studentAnswers against correctAnswers and computes a score.
+ * Returns correctAnswers too, so the client can show the review screen
+ * without ever holding the answers before submission.
  */
 export async function submitAutoScoredAttempt(
   attemptId: string,
@@ -106,9 +108,8 @@ export async function submitAutoScoredAttempt(
     score,
   });
 
-  return { score, total };
+  return { score, total, correctAnswers };
 }
-
 /**
  * Gets how many completed attempts a student has used for a given task.
  * Used by task-list pages to show "X/N attempts used" and lock cards.

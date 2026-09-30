@@ -11,6 +11,7 @@ import {
   LoaderCircle,
   Volume2,
 } from 'lucide-react';
+import { BackLink } from '@/components/practice/back-link';
 import { startAttempt, submitAttempt } from './actions';
 
 const primaryButton =
@@ -51,7 +52,7 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState<{ score: number; total: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ score: number; total: number; correctAnswers: Record<string, string> } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false);
   const [audioPhase, setAudioPhase] = useState<AudioPhase>('loading');
@@ -151,7 +152,9 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
         <TopBar questionType={questionType} title={`Task ${task.taskNumber} results`} />
 
         <main className="mx-auto max-w-3xl px-6 py-10">
-          <section className="relative overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
+          <BackLink href="/practice/listening" label="Listening" />
+
+          <section className="relative mt-6 overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
             <div
               aria-hidden
               className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-primary-foreground/10 blur-3xl"
@@ -190,7 +193,7 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
 
             <ol className="mt-5 space-y-3">
               {task.questions.map((q: any, i: number) => {
-                const isCorrect = answers[q.id] === task.correctAnswers?.[q.id];
+                const isCorrect = answers[q.id] === submitted.correctAnswers[q.id];
                 return (
                   <li key={q.id} className="rounded-xl border bg-card p-5 text-card-foreground">
                     <div className="flex gap-3">
@@ -214,7 +217,7 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
                           {!isCorrect && (
                             <div className="flex gap-2">
                               <dt className="w-28 shrink-0 text-muted-foreground">Correct answer</dt>
-                              <dd className="font-medium">{task.correctAnswers?.[q.id]}</dd>
+                              <dd className="font-medium">{submitted.correctAnswers[q.id]}</dd>
                             </div>
                           )}
                         </dl>
@@ -334,7 +337,11 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
         {/* Questions */}
         <div className="mt-8">
           {task.instructions && (
-            <p className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
+            <p
+              className="no-copy rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground"
+              onCopy={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
+            >
               {task.instructions}
             </p>
           )}

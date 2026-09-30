@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CircleAlert, Clock, LoaderCircle, PenLine } from 'lucide-react';
+import { BackLink } from '@/components/practice/back-link';
 import {
   MAX_WRITING_ATTEMPTS,
   WRITING_PARTS,
@@ -49,7 +50,11 @@ function TopBar({ subtitle, title, children }: { subtitle: string; title: string
 
 function PromptPanel({ prompt }: { prompt: PromptView }) {
   return (
-    <div>
+    <div
+      className="no-copy"
+      onCopy={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <p className="whitespace-pre-wrap text-[0.9375rem] leading-relaxed">{prompt.prompt}</p>
       {prompt.imageUrl && (
         <div className="mt-6 overflow-hidden rounded-xl border bg-card">
@@ -83,6 +88,7 @@ export default function WritingAttemptClient({
   const [starting, setStarting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false); // UI only: shows a different message when the lock caused submission
 
   const textRef = useRef('');
   const inFlight = useRef(false);
@@ -101,6 +107,7 @@ export default function WritingAttemptClient({
       textRef.current = a.draft;
       setDirty(false);
       autoSubmitted.current = false;
+      setLockedByTabSwitch(false);
       setPhase('writing');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start the attempt');
@@ -157,6 +164,22 @@ export default function WritingAttemptClient({
     return () => clearTimeout(t);
   }, [phase, active, dirty, text]);
 
+  // Tab-switch lock: leaving this tab auto-submits and uses one attempt
+  useEffect(() => {
+    if (phase !== 'writing' || !active) return;
+
+    function handleVisibilityChange() {
+      if (document.hidden && !autoSubmitted.current) {
+        autoSubmitted.current = true;
+        setLockedByTabSwitch(true);
+        submit();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [phase, active, submit]);
+
   /* ───────── Writing ───────── */
   if (phase === 'writing' && active) {
     const mins = Math.floor(secondsLeft / 60);
@@ -187,14 +210,18 @@ export default function WritingAttemptClient({
           </button>
         </TopBar>
 
+        <div role="alert" className="border-b bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive sm:px-6">
+          Stay on this tab. Switching away will submit your answer immediately and use one attempt.
+        </div>
+
         <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
-          <section aria-label="Question" className="border-b px-6 py-8 lg:h-[calc(100svh-4rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10">
+          <section aria-label="Question" className="border-b px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10">
             <div className="mx-auto max-w-prose">
               <PromptPanel prompt={prompt} />
             </div>
           </section>
 
-          <section aria-label="Your answer" className="flex flex-col px-6 py-8 lg:h-[calc(100svh-4rem)] lg:px-10">
+          <section aria-label="Your answer" className="flex flex-col px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:px-10">
             <label htmlFor="answer" className="sr-only">
               Your answer
             </label>
@@ -233,13 +260,26 @@ export default function WritingAttemptClient({
       <div className="min-h-svh bg-background text-foreground">
         <TopBar subtitle={title} title={`Attempt ${result.attemptNumber} feedback`} />
         <main className="mx-auto max-w-3xl px-6 py-10">
-          <EvaluationView
-            result={result}
-            onUpdated={(r) => {
-              setResult(r);
-              setAttempts((prev) => prev.map((a) => (a.id === r.id ? r : a)));
-            }}
-          />
+          <BackLink href={`/practice/writing/${categorySlug}`} label={prompt.category} />
+
+          {lockedByTabSwitch && (
+            <div
+              role="alert"
+              className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
+            >
+              This attempt was submitted automatically because you switched away from the tab.
+            </div>
+          )}
+
+          <div className="mt-6">
+            <EvaluationView
+              result={result}
+              onUpdated={(r) => {
+                setResult(r);
+                setAttempts((prev) => prev.map((a) => (a.id === r.id ? r : a)));
+              }}
+            />
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button onClick={() => setPhase('intro')} className={`${primaryButton} h-11 px-5`}>
               {attemptsLeft > 0 ? `Try again (${attemptsLeft} left)` : 'Compare my attempts'}
@@ -261,7 +301,9 @@ export default function WritingAttemptClient({
     <div className="min-h-svh bg-background text-foreground">
       <TopBar subtitle={cfg.label} title={title} />
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <section className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
+        <BackLink href={`/practice/writing/${categorySlug}`} label={prompt.category} />
+
+        <section className="mt-6 rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
           <PromptPanel prompt={prompt} />
         </section>
 
@@ -273,6 +315,7 @@ export default function WritingAttemptClient({
             <li>You have {prompt.timerMinutes} minutes. Your answer is submitted automatically when time runs out.</li>
             <li>Write about {cfg.targetWords} (at least {cfg.minWords}).</li>
             <li>Your draft saves as you type. If you leave, you can resume while time remains.</li>
+            <li>Switching away from this tab while writing submits your answer immediately.</li>
           </ul>
           {error && (
             <p role="alert" className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">

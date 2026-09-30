@@ -4,14 +4,14 @@ import { useRef, useState } from 'react';
 import { Check, Copy, RefreshCw } from 'lucide-react';
 import { Field, inputClass } from '@/components/admin/ui';
 import SubmitButton from '@/components/admin/submit-button';
-import { createAdmin } from './actions';
+import { createStudent } from './actions';
 
 function randomPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-export default function AddAdminForm() {
+export default function AddStudentForm() {
   const [password, setPassword] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
@@ -20,11 +20,11 @@ export default function AddAdminForm() {
   async function handleAction(formData: FormData) {
     setError('');
     try {
-      await createAdmin(formData);
+      await createStudent(formData);
       formRef.current?.reset();
       setPassword('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create admin');
+      setError(err instanceof Error ? err.message : 'Could not create student');
     }
   }
 
@@ -37,22 +37,35 @@ export default function AddAdminForm() {
 
   return (
     <form ref={formRef} action={handleAction} className="space-y-5">
-      <Field label="Email" htmlFor="admin-email" hint="Admins log in with this email directly, no OTP username lookup.">
-        <input
-          id="admin-email"
-          name="email"
-          type="email"
-          required
-          autoComplete="off"
-          placeholder="e.g. teacher@ieltstryagain.com"
-          className={inputClass}
-        />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Username" htmlFor="username" hint="What the student types to log in.">
+          <input
+            id="username"
+            name="username"
+            required
+            autoComplete="off"
+            placeholder="e.g. arjun.k"
+            className={inputClass}
+          />
+        </Field>
 
-      <Field label="Password" htmlFor="admin-password" hint="At least 8 characters. Share this with the new admin.">
+        <Field label="Email" htmlFor="email" hint="Used to send the one-time login code.">
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="off"
+            placeholder="e.g. arjun@example.com"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <Field label="Password" htmlFor="password" hint="At least 8 characters. Share this with the student.">
         <div className="flex gap-2">
           <input
-            id="admin-password"
+            id="password"
             name="password"
             required
             minLength={8}
@@ -96,7 +109,7 @@ export default function AddAdminForm() {
       )}
 
       <div className="flex justify-end border-t pt-5">
-        <SubmitButton pendingLabel="Creating…">Create admin</SubmitButton>
+        <SubmitButton pendingLabel="Creating…">Create student</SubmitButton>
       </div>
     </form>
   );

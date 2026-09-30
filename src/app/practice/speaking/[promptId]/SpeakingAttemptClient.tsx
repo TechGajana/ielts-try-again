@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CircleAlert, Clock, LoaderCircle, Mic, Square } from 'lucide-react';
+import { BackLink } from '@/components/practice/back-link';
 import {
   MAX_SPEAKING_ATTEMPTS,
   MAX_SPEAK_SECONDS,
@@ -59,7 +60,12 @@ function TopBar({ subtitle, title, children }: { subtitle: string; title: string
 
 function CueCard({ prompt }: { prompt: PromptView }) {
   return (
-    <section aria-label="Cue card" className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
+    <section
+      aria-label="Cue card"
+      className="no-copy rounded-2xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8"
+      onCopy={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <p className="text-xl font-semibold leading-snug tracking-tight">{prompt.topic}</p>
       <p className="mt-5 text-sm font-medium">You should say:</p>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[0.9375rem] leading-relaxed">
@@ -88,6 +94,7 @@ export default function SpeakingAttemptClient({
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
   const [uploadFailed, setUploadFailed] = useState(false);
+  const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false); // UI only: shows a different message when the lock caused submission
 
   const activeRef = useRef<Active | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -100,6 +107,7 @@ export default function SpeakingAttemptClient({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lockTriggeredRef = useRef(false); // guards against the visibilitychange firing more than once
 
   const attemptsLeft = MAX_SPEAKING_ATTEMPTS - attempts.length;
 
@@ -126,8 +134,21 @@ export default function SpeakingAttemptClient({
       const contentType = blob.type.split(';')[0] || 'audio/webm';
       const { uploadUrl } = await getSpeakingUploadTarget(current.attemptId, contentType);
 
-      const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: blob });
-      if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+      let res: Response;
+      try {
+        res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: blob });
+      } catch (fetchErr) {
+        console.error('Speaking upload network error:', fetchErr);
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'unknown';
+        throw new Error(
+          `Could not reach the storage server from origin: ${origin}. This origin is likely missing from the R2 CORS policy. Add it exactly as shown, then try again.`,
+        );
+      }
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`Upload failed (${res.status})${body ? `: ${body.slice(0, 200)}` : ''}`);
+      }
 
       const submitted = await submitSpeakingAttempt(current.attemptId, durationRef.current);
       setAttempts((prev) =>
@@ -202,6 +223,8 @@ export default function SpeakingAttemptClient({
       setNotes('');
       prepDeadlineRef.current = Date.now() + PREP_SECONDS * 1000;
       setPrepLeft(PREP_SECONDS);
+      lockTriggeredRef.current = false;
+      setLockedByTabSwitch(false);
       setPhase('prep');
     } catch (err) {
       releaseAudio();
@@ -265,6 +288,29 @@ export default function SpeakingAttemptClient({
     return () => cancelAnimationFrame(raf);
   }, [phase]);
 
+  // Tab-switch lock: leaving during preparation or recording ends the attempt.
+  // During prep, this jumps straight into recording and stops almost immediately,
+  // so an attempt is still consumed and something is submitted, matching Reading/Listening/Writing.
+  useEffect(() => {
+    if (phase !== 'prep' && phase !== 'recording') return;
+
+    function handleVisibilityChange() {
+      if (!document.hidden || lockTriggeredRef.current) return;
+      lockTriggeredRef.current = true;
+      setLockedByTabSwitch(true);
+
+      if (phase === 'recording') {
+        stopRecording();
+      } else {
+        beginRecording();
+        setTimeout(() => stopRecording(), 300);
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [phase, stopRecording, beginRecording]);
+
   const subtitle = `Cue card ${prompt.cardNumber}`;
 
   /* ───────── Preparation ───────── */
@@ -283,6 +329,10 @@ export default function SpeakingAttemptClient({
             {fmt(prepLeft)}
           </div>
         </TopBar>
+
+        <div role="alert" className="border-b bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive sm:px-6">
+          Stay on this tab. Switching away will end your attempt and use one attempt.
+        </div>
 
         <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
           <p className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
@@ -337,6 +387,10 @@ export default function SpeakingAttemptClient({
             {fmt(speakLeft)}
           </div>
         </TopBar>
+
+        <div role="alert" className="border-b bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive sm:px-6">
+          Stay on this tab. Switching away will end your attempt and use one attempt.
+        </div>
 
         <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
           <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
@@ -414,13 +468,26 @@ export default function SpeakingAttemptClient({
       <div className="min-h-svh bg-background text-foreground">
         <TopBar subtitle={subtitle} title={`Attempt ${result.attemptNumber} feedback`} />
         <main className="mx-auto max-w-3xl px-6 py-10">
-          <SpeakingEvaluationView
-            result={result}
-            onUpdated={(r) => {
-              setResult(r);
-              setAttempts((prev) => prev.map((a) => (a.id === r.id ? r : a)));
-            }}
-          />
+          <BackLink href="/practice/speaking" label="Speaking" />
+
+          {lockedByTabSwitch && (
+            <div
+              role="alert"
+              className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
+            >
+              This attempt was submitted automatically because you switched away from the tab.
+            </div>
+          )}
+
+          <div className="mt-6">
+            <SpeakingEvaluationView
+              result={result}
+              onUpdated={(r) => {
+                setResult(r);
+                setAttempts((prev) => prev.map((a) => (a.id === r.id ? r : a)));
+              }}
+            />
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button onClick={() => setPhase('intro')} className={`${primaryButton} h-11 px-5`}>
               {attemptsLeft > 0 ? 'Speak again after this feedback' : 'Compare my attempts'}
@@ -442,7 +509,11 @@ export default function SpeakingAttemptClient({
     <div className="min-h-svh bg-background text-foreground">
       <TopBar subtitle="Speaking Part 2" title={subtitle} />
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <CueCard prompt={prompt} />
+        <BackLink href="/practice/speaking" label="Speaking" />
+
+        <div className="mt-6">
+          <CueCard prompt={prompt} />
+        </div>
 
         <section className="mt-6 rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -455,6 +526,7 @@ export default function SpeakingAttemptClient({
               early.
             </li>
             <li>You need a microphone. Your browser will ask for permission when you start.</li>
+            <li>Switching away from this tab during preparation or recording ends your attempt immediately.</li>
             {attempts.length === 1 && <li>This is your last attempt. Use the feedback from attempt 1 to improve.</li>}
           </ul>
           {error && (

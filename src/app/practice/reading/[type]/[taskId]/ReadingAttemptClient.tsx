@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BookOpen, CircleCheck, CircleX, Clock, LoaderCircle } from 'lucide-react';
+import { BackLink } from '@/components/practice/back-link';
 import { startAttempt, submitAttempt } from './actions';
 
 const primaryButton =
@@ -37,7 +38,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState<{ score: number; total: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ score: number; total: number; correctAnswers: Record<string, string> } | null>(null);
   const [submitting, setSubmitting] = useState(false); // UI only: spinner on the submit buttons
   const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false); // UI only: shows a different message when the lock caused submission
   const inFlight = useRef(false); // guards against double submits (button click + timer + tab switch)
@@ -110,7 +111,9 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
         <TopBar questionType={questionType} title={`Task ${task.taskNumber} results`} />
 
         <main className="mx-auto max-w-3xl px-6 py-10">
-          <section className="relative overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
+          <BackLink href="/practice/reading" label="Reading" />
+
+          <section className="relative mt-6 overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
             <div
               aria-hidden
               className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-primary-foreground/10 blur-3xl"
@@ -149,7 +152,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
 
             <ol className="mt-5 space-y-3">
               {task.questions.map((q: any, i: number) => {
-                const isCorrect = answers[q.id] === task.correctAnswers[q.id];
+                const isCorrect = answers[q.id] === submitted.correctAnswers[q.id];
                 return (
                   <li key={q.id} className="rounded-xl border bg-card p-5 text-card-foreground">
                     <div className="flex gap-3">
@@ -177,7 +180,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
                           {!isCorrect && (
                             <div className="flex gap-2">
                               <dt className="w-28 shrink-0 text-muted-foreground">Correct answer</dt>
-                              <dd className="font-medium">{task.correctAnswers[q.id]}</dd>
+                              <dd className="font-medium">{submitted.correctAnswers[q.id]}</dd>
                             </div>
                           )}
                         </dl>
@@ -250,7 +253,11 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
           aria-label="Reading passage"
           className="border-b px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
         >
-          <div className="mx-auto max-w-prose whitespace-pre-wrap font-serif text-[1.0625rem] leading-8">
+          <div
+            className="no-copy mx-auto max-w-prose whitespace-pre-wrap font-serif text-[1.0625rem] leading-8"
+            onCopy={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
+          >
             {task.passage}
           </div>
         </section>

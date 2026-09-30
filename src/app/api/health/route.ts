@@ -30,7 +30,7 @@ export async function GET() {
   // 3. OpenAI test
   try {
     const res = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-nano',
       messages: [{ role: 'user', content: 'Say OK' }],
       max_tokens: 5,
     });

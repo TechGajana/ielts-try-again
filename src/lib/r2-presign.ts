@@ -11,10 +11,10 @@ export async function getUploadUrl(key: string, contentType: string) {
   return getSignedUrl(r2, command, { expiresIn: 15 * 60 }); // 15 min
 }
 
-export async function getPlaybackUrl(key: string) {
+export async function getPlaybackUrl(key: string, expiresInSeconds = 10 * 60) {
   const command = new GetObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
   });
-  return getSignedUrl(r2, command, { expiresIn: 10 * 60 }); // 10 min, enough for one task attempt
+  return getSignedUrl(r2, command, { expiresIn: expiresInSeconds }); // 10 min by default, callers can ask for longer
 }

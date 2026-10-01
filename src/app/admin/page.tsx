@@ -1,5 +1,14 @@
 import Link from 'next/link';
-import { Activity, ArrowUpRight, BookOpen, Headphones, Users, type LucideIcon } from 'lucide-react';
+import {
+  Activity,
+  ArrowUpRight,
+  BookOpen,
+  Headphones,
+  Mic,
+  PenLine,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase-admin';
 import {
@@ -46,7 +55,11 @@ function StatCard({
       </div>
       <div className="mt-6">
         {value !== undefined && <p className="text-3xl font-bold tabular-nums tracking-tight">{value}</p>}
-        <p className={`text-sm text-muted-foreground ${value !== undefined ? 'mt-0.5' : 'text-base font-medium text-foreground'}`}>
+        <p
+          className={`text-sm text-muted-foreground ${
+            value !== undefined ? 'mt-0.5' : 'text-base font-medium text-foreground'
+          }`}
+        >
           {label}
         </p>
         {sublabel && <p className="mt-1 text-xs text-muted-foreground">{sublabel}</p>}
@@ -133,12 +146,22 @@ function CoveragePanel({
 }
 
 export default async function AdminHomePage() {
-  const [readingSnap, listeningSnap, attemptsCount, studentsCount, activeStudentsCount] = await Promise.all([
+  const [
+    readingSnap,
+    listeningSnap,
+    attemptsCount,
+    studentsCount,
+    activeStudentsCount,
+    writingCount,
+    speakingCount,
+  ] = await Promise.all([
     adminDb.collection('readingTasks').select('questionType').get(),
     adminDb.collection('listeningTasks').select('questionType').get(),
     adminDb.collection('attempts').count().get(),
     adminDb.collection('students').count().get(),
     adminDb.collection('students').where('accountStatus', '==', 'active').count().get(),
+    adminDb.collection('writingPrompts').count().get(),
+    adminDb.collection('speakingPrompts').count().get(),
   ]);
 
   const totalStudents = studentsCount.data().count;
@@ -152,9 +175,11 @@ export default async function AdminHomePage() {
         description="See how much practice content each question type has, and jump in to add more."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard icon={BookOpen} label="Reading tasks" value={readingSnap.size} href="/admin/content/reading" />
         <StatCard icon={Headphones} label="Listening tasks" value={listeningSnap.size} href="/admin/content/listening" />
+        <StatCard icon={PenLine} label="Writing tasks" value={writingCount.data().count} href="/admin/content/writing" />
+        <StatCard icon={Mic} label="Speaking tasks" value={speakingCount.data().count} href="/admin/content/speaking" />
         <StatCard icon={Activity} label="Attempts so far" value={attemptsCount.data().count} />
         <StatCard
           icon={Users}

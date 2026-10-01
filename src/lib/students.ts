@@ -6,19 +6,15 @@ export type StudentStats = {
   username: string;
   email: string;
   accountStatus: string;
+  organizationId: string | null;
+  allowedCourseIds: string[];
   createdAt: number | null;
   reading: { done: number; total: number };
   listening: { done: number; total: number };
   scoredAttempts: number;
-  avgScorePercent: number | null; // null when the student has no scored attempts yet
+  avgScorePercent: number | null;
 };
 
-/**
- * ASSUMPTION: a top-level "students" collection, doc id = Firebase Auth uid,
- * with fields { username, email, accountStatus, createdAt }. This matches
- * login/actions.ts (loginStep1 reads data.email and data.accountStatus off
- * this collection), but please confirm against create-test-student.ts too.
- */
 export async function listStudentsWithStats(): Promise<StudentStats[]> {
   const [studentsSnap, readingSnap, listeningSnap, attemptsSnap] = await Promise.all([
     adminDb.collection('students').orderBy('createdAt', 'desc').get(),
@@ -30,9 +26,7 @@ export async function listStudentsWithStats(): Promise<StudentStats[]> {
   const totalReadingTasks = readingSnap.data().count;
   const totalListeningTasks = listeningSnap.data().count;
 
-  // studentId -> module -> Set of taskIds completed (scored)
   const doneByStudent = new Map<string, { reading: Set<string>; listening: Set<string> }>();
-  // studentId -> { sumPercent, count } for average score
   const scoreByStudent = new Map<string, { sumPercent: number; count: number }>();
 
   for (const doc of attemptsSnap.docs) {
@@ -48,7 +42,6 @@ export async function listStudentsWithStats(): Promise<StudentStats[]> {
     }
     if (score != null) {
       doneByStudent.get(studentId)![module].add(taskId);
-
       if (total) {
         if (!scoreByStudent.has(studentId)) scoreByStudent.set(studentId, { sumPercent: 0, count: 0 });
         const s = scoreByStudent.get(studentId)!;
@@ -69,6 +62,8 @@ export async function listStudentsWithStats(): Promise<StudentStats[]> {
       username: (data.username as string) ?? '(unknown)',
       email: (data.email as string) ?? '(unknown)',
       accountStatus: (data.accountStatus as string) ?? 'unknown',
+      organizationId: (data.organizationId as string | undefined) ?? null,
+      allowedCourseIds: (data.allowedCourseIds as string[] | undefined) ?? [],
       createdAt,
       reading: { done: done.reading.size, total: totalReadingTasks },
       listening: { done: done.listening.size, total: totalListeningTasks },
@@ -84,6 +79,8 @@ export async function createStudentAccount(input: {
   username: string;
   email: string;
   password: string;
+  organizationId?: string | null;
+  allowedCourseIds?: string[];
 }): Promise<{ uid: string }> {
   const username = input.username.trim();
   const email = input.email.trim().toLowerCase();
@@ -99,7 +96,6 @@ export async function createStudentAccount(input: {
   if (!existingUsername.empty) throw new Error('That username is already taken.');
   if (!existingEmail.empty) throw new Error('A student with that email already exists.');
 
-  // Real email, so createAndSendOtp in login/actions.ts can actually reach the student.
   const userRecord = await adminAuth.createUser({
     email,
     password: input.password,
@@ -111,10 +107,11 @@ export async function createStudentAccount(input: {
       username,
       email,
       accountStatus: 'active',
+      organizationId: input.organizationId || null,
+      allowedCourseIds: input.allowedCourseIds ?? [],
       createdAt: FieldValue.serverTimestamp(),
     });
   } catch (err) {
-    // Roll back the auth user so a failed write doesn't leave an orphaned login
     await adminAuth.deleteUser(userRecord.uid).catch(() => {});
     throw err;
   }
@@ -126,10 +123,15 @@ export async function setStudentStatus(uid: string, accountStatus: 'active' | 's
   await adminDb.collection('students').doc(uid).update({ accountStatus });
 }
 
+export async function setStudentCourses(uid: string, courseIds: string[]): Promise<void> {
+  await adminDb.collection('students').doc(uid).update({ allowedCourseIds: courseIds });
+}
+
 export async function deleteStudentAccount(uid: string): Promise<void> {
   await adminDb.collection('students').doc(uid).delete();
-  await adminAuth.deleteUser(uid).catch(() => {}); // ignore if already gone
+  await adminAuth.deleteUser(uid).catch(() => {});
 }
+
 export async function updateStudentAccount(
   uid: string,
   input: { username: string; email: string },
@@ -146,7 +148,6 @@ export async function updateStudentAccount(
 
   const currentData = current.data()!;
 
-  // Only check uniqueness if the value actually changed
   if (username !== currentData.username) {
     const dupe = await adminDb.collection('students').where('username', '==', username).limit(1).get();
     if (!dupe.empty) throw new Error('That username is already taken.');
@@ -155,20 +156,20 @@ export async function updateStudentAccount(
   if (email !== currentData.email) {
     const dupe = await adminDb.collection('students').where('email', '==', email).limit(1).get();
     if (!dupe.empty) throw new Error('A student with that email already exists.');
-
-    // Firebase Auth is the source of truth for login, so it must be updated too,
-    // or verifyPasswordViaRest in login/actions.ts would check against the old email.
     await adminAuth.updateUser(uid, { email, emailVerified: false });
   }
 
   await studentRef.update({ username, email });
 }
 
+export async function setStudentOrganization(uid: string, organizationId: string | null): Promise<void> {
+  await adminDb.collection('students').doc(uid).update({ organizationId: organizationId || null });
+}
+
 export async function resetStudentAttempts(uid: string): Promise<{ deleted: number }> {
   const attemptsRef = adminDb.collection('attempts').where('studentId', '==', uid);
   let deleted = 0;
 
-  // Deletes in batches of 400 to stay well under Firestore's 500-write limit per batch
   while (true) {
     const snap = await attemptsRef.limit(400).get();
     if (snap.empty) break;

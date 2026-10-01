@@ -3,23 +3,23 @@ import { PageHeader, AddTaskPanel } from '@/components/admin/ui';
 import DeleteTaskButton from '@/components/admin/delete-task-button';
 import { listStudentsWithStats } from '@/lib/students';
 import { listAdmins } from '@/lib/admins';
+import { listOrganizations } from '@/lib/organizations';
+import { listRecordings } from '@/lib/recordings';
+import { listMaterials } from '@/lib/materials';
+import { listLiveClasses } from '@/lib/live-classes';
+import type { AccessGroup } from './AccessPicker';
 import AddStudentForm from './AddStudentForm';
 import AddAdminForm from './AddAdminForm';
-import { deleteStudent, toggleStudentStatus, deleteAdmin } from './actions';
 import EditStudentDialog from './EditStudentDialog';
+import EditStudentCoursesDialog from './EditStudentCoursesDialog';
 import ResetAttemptsButton from './ResetAttemptsButton';
+import { deleteStudent, toggleStudentStatus, deleteAdmin } from './actions';
 
 function ProgressBar({ done, total }: { done: number; total: number }) {
   const percent = total ? Math.round((done / total) * 100) : 0;
   return (
     <div className="w-28">
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
         <div className="h-full rounded-full bg-foreground" style={{ width: `${percent}%` }} />
       </div>
       <p className="mt-1 text-xs tabular-nums text-muted-foreground">
@@ -49,14 +49,30 @@ function StatusBadge({ uid, status }: { uid: string; status: string }) {
 }
 
 export default async function AdminStudentsPage() {
-  const [students, admins] = await Promise.all([listStudentsWithStats(), listAdmins()]);
+  const [students, admins, organizations, recordings, materials, liveClasses] = await Promise.all([
+    listStudentsWithStats(),
+    listAdmins(),
+    listOrganizations(),
+    listRecordings(),
+    listMaterials(),
+    listLiveClasses(),
+  ]);
+
+  const accessGroups: AccessGroup[] = [
+    { label: 'Recorded courses', items: recordings.map((r) => ({ id: r.id, title: r.title })) },
+    { label: 'Study materials', items: materials.map((m) => ({ id: m.id, title: m.title })) },
+    { label: 'Live classes', items: liveClasses.map((c) => ({ id: c.id, title: c.title })) },
+  ];
 
   return (
     <>
       <PageHeader title="Students" description="Add student accounts and see how each one is progressing." />
 
       <AddTaskPanel title="Add a student">
-        <AddStudentForm />
+        <AddStudentForm
+          organizations={organizations.map((o) => ({ id: o.id, name: o.name }))}
+          accessGroups={accessGroups}
+        />
       </AddTaskPanel>
 
       <h2 className="mb-5 text-lg font-semibold tracking-tight">All students ({students.length})</h2>
@@ -72,27 +88,13 @@ export default async function AdminStudentsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b text-xs uppercase tracking-wider text-muted-foreground">
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Student
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Email
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Status
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Reading
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Listening
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Avg score
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Joined
-                  </th>
+                  <th scope="col" className="px-5 py-3 font-medium">Student</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Email</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Reading</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Listening</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Avg score</th>
+                  <th scope="col" className="px-5 py-3 font-medium">Joined</th>
                   <th scope="col" className="px-5 py-3" />
                 </tr>
               </thead>
@@ -120,19 +122,24 @@ export default async function AdminStudentsPage() {
                         <ProgressBar done={s.listening.done} total={s.listening.total} />
                       </td>
                       <td className="px-5 py-3.5 tabular-nums">
-                        {s.avgScorePercent === null ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          `${s.avgScorePercent}%`
-                        )}
+                        {s.avgScorePercent === null ? <span className="text-muted-foreground">—</span> : `${s.avgScorePercent}%`}
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap text-muted-foreground">
+                        {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-5 py-3.5 text-right">
-  <div className="flex items-center justify-end gap-1">
-    <EditStudentDialog uid={s.uid} username={s.username} email={s.email} />
-    <ResetAttemptsButton uid={s.uid} label={s.username} />
-    <DeleteTaskButton action={deleteStudent.bind(null, s.uid)} label={s.username} />
-  </div>
-</td>
+                        <div className="flex items-center justify-end gap-1">
+                          <EditStudentDialog uid={s.uid} username={s.username} email={s.email} />
+                          <EditStudentCoursesDialog
+                            uid={s.uid}
+                            username={s.username}
+                            allowedCourseIds={s.allowedCourseIds}
+                            accessGroups={accessGroups}
+                          />
+                          <ResetAttemptsButton uid={s.uid} label={s.username} />
+                          <DeleteTaskButton action={deleteStudent.bind(null, s.uid)} label={s.username} />
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -142,12 +149,8 @@ export default async function AdminStudentsPage() {
         </div>
       )}
 
-      {/* ───────── Admins ───────── */}
       <div className="mt-14">
-        <PageHeader
-          title="Admin accounts"
-          description="Give someone full access to manage content, students and other admins."
-        />
+        <PageHeader title="Admin accounts" description="Give someone full access to manage content, students and other admins." />
 
         <AddTaskPanel title="Add an admin">
           <AddAdminForm />

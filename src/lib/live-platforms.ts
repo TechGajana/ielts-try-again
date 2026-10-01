@@ -1,0 +1,1 @@
+export const LIVE_PLATFORMS = ['Zoom', 'Google Meet', 'Microsoft Teams', 'YouTube Live', 'Other'] as const;

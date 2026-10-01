@@ -4,12 +4,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
+  Building2,
+  CalendarClock,
   ClipboardCheck,
+  FileText,
   Headphones,
   LayoutDashboard,
   Mic,
   PenLine,
   Users,
+  Video,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -19,7 +23,11 @@ const ITEMS: { href: string; label: string; icon: LucideIcon; exact?: boolean }[
   { href: '/admin/content/listening', label: 'Listening content', icon: Headphones },
   { href: '/admin/content/writing', label: 'Writing content', icon: PenLine },
   { href: '/admin/content/speaking', label: 'Speaking content', icon: Mic },
+  { href: '/admin/content/recordings', label: 'Recordings', icon: Video },
+  { href: '/admin/content/materials', label: 'Study materials', icon: FileText },
+  { href: '/admin/content/live-classes', label: 'Live classes', icon: CalendarClock },
   { href: '/admin/content/mock-tests', label: 'Mock tests', icon: ClipboardCheck },
+  { href: '/admin/content/organizations', label: 'Institutes', icon: Building2 },
   { href: '/admin/students', label: 'Students', icon: Users },
 ];
 

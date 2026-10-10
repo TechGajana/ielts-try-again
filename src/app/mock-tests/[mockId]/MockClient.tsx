@@ -43,24 +43,31 @@ export default function MockClient({
   ];
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="border-b">
-        <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-6">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <div className="min-h-svh bg-[#f6f7f4] text-foreground">
+      <header className="border-b border-black/[0.06] bg-white/85 shadow-[0_1px_0_rgba(18,38,31,0.02)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] max-w-3xl items-center gap-3 px-4 sm:px-6">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-[#183b30] text-white shadow-sm">
             <ClipboardCheck className="size-5" aria-hidden />
           </div>
-          <p className="text-sm font-medium">Mock Test {load.mockNumber}</p>
+          <p className="text-sm font-semibold">IELTS <span className="text-[#68877a]">STUDIO</span></p>
+          <span className="ml-auto rounded-full bg-[#edf3ef] px-3 py-1 text-xs font-medium text-[#285442]">Mock {load.mockNumber}</span>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-3xl font-bold tracking-tight">{load.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Read this before you start.</p>
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <section className="relative overflow-hidden rounded-[1.75rem] bg-[#183b30] p-7 text-white shadow-[0_22px_60px_rgba(24,59,48,0.16)] sm:p-10">
+          <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 size-80 rounded-full bg-[#a9c6a6]/20 blur-3xl" />
+          <div className="relative">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#b9cfbd]">Before you begin · full exam</p>
+            <h1 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">{load.title}</h1>
+            <p className="mt-3 text-sm text-white/70">Take a moment to prepare your space and read the exam rules.</p>
+          </div>
+        </section>
 
-        <ul className="mt-6 space-y-3 rounded-2xl border bg-card p-6 text-sm leading-relaxed text-card-foreground shadow-sm">
+        <ul className="mt-6 space-y-3 rounded-2xl border border-black/[0.07] bg-white p-6 text-sm leading-relaxed text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
           {rules.map((r) => (
             <li key={r} className="flex gap-3">
-              <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-foreground" />
+              <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-[#547d63]" />
               {r}
             </li>
           ))}
@@ -93,7 +100,7 @@ export default function MockClient({
         <button
           onClick={handleStart}
           disabled={!agreed || starting}
-          className="mt-6 inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-6 inline-flex h-12 items-center gap-2 rounded-xl bg-[#183b30] px-8 text-sm font-semibold text-white shadow-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#244d3d] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {starting && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />}
           Start Mock Test

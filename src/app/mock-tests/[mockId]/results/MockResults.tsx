@@ -74,6 +74,12 @@ function ObjectiveReview({ result }: { result: ObjectiveResult }) {
                           <dd className="font-medium">{r.correctAnswer}</dd>
                         </div>
                       )}
+                      {r.explanation && (
+                        <div className="flex gap-2">
+                          <dt className="w-28 shrink-0 text-muted-foreground">Explanation</dt>
+                          <dd>{r.explanation}</dd>
+                        </div>
+                      )}
                     </dl>
                   </div>
                 </div>
@@ -207,25 +213,26 @@ export default function MockResults({ mockId, initial }: { mockId: string; initi
   ];
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="border-b">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-6">
-          <p className="text-sm font-medium">Mock Test {view.mockNumber} results</p>
+    <div className="min-h-svh bg-[#f6f7f4] text-foreground">
+      <header className="border-b border-black/[0.06] bg-white/85 shadow-[0_1px_0_rgba(18,38,31,0.02)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] max-w-3xl items-center justify-between px-4 sm:px-6">
+          <p className="text-sm font-semibold">Mock Test {view.mockNumber} <span className="font-normal text-muted-foreground">/ Results</span></p>
           <Link
             href="/mock-tests"
-            className="rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="rounded-lg px-3 py-2 text-xs font-medium text-[#52635a] transition-colors hover:bg-[#f1f5f1] hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
           >
             All mock tests
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-3xl font-bold tracking-tight">{view.title}</h1>
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68877a]">Your performance</p>
+        <h1 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">{view.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{REASONS[view.closeReason]}</p>
 
         <ul className="mt-8 grid gap-4 sm:grid-cols-3">
-          <li className="rounded-2xl border bg-card p-5 text-card-foreground shadow-sm">
+          <li className="rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
             <p className="text-sm text-muted-foreground">Listening</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
               {view.listening.band === null ? '–' : view.listening.band.toFixed(1)}
@@ -234,7 +241,7 @@ export default function MockResults({ mockId, initial }: { mockId: string; initi
               {view.listening.raw} / {view.listening.total} correct
             </p>
           </li>
-          <li className="rounded-2xl border bg-card p-5 text-card-foreground shadow-sm">
+          <li className="rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
             <p className="text-sm text-muted-foreground">Reading</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
               {view.reading.band === null ? '–' : view.reading.band.toFixed(1)}
@@ -243,7 +250,7 @@ export default function MockResults({ mockId, initial }: { mockId: string; initi
               {view.reading.raw} / {view.reading.total} correct
             </p>
           </li>
-          <li className="rounded-2xl border bg-card p-5 text-card-foreground shadow-sm">
+          <li className="rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
             <p className="text-sm text-muted-foreground">Writing</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
               {view.writing.band === null ? '–' : view.writing.band.toFixed(1)}
@@ -278,7 +285,7 @@ export default function MockResults({ mockId, initial }: { mockId: string; initi
 
           {tab === 'writing' && (
             <div className="space-y-10">
-              <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div className="rounded-2xl border border-black/[0.07] bg-white p-6 text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
                 <dl className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <dt className="text-sm text-muted-foreground">Task 1 estimated band</dt>

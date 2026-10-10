@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { signInWithCustomToken } from 'firebase/auth';
 import { ArrowLeft, CircleAlert, GraduationCap, LoaderCircle } from 'lucide-react';
-import { clientAuth } from '@/lib/firebase-client';
 import { loginStep2 } from '../actions';
 
 const OTP_LENGTH = 6;
@@ -29,7 +26,6 @@ export default function OtpPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // UI only: disables the button while verifying
   const [focused, setFocused] = useState(false); // UI only: highlights the active digit box
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,23 +35,11 @@ export default function OtpPage() {
       const uid = sessionStorage.getItem('pendingUid');
       if (!uid) throw new Error('Session expired. Please login again.');
 
-      const { customToken } = await loginStep2(uid, otp);
-
-      const cred = await signInWithCustomToken(clientAuth, customToken);
-      const idToken = await cred.user.getIdToken();
-
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+      const { isAdmin } = await loginStep2(uid, otp);
       sessionStorage.removeItem('pendingUid');
-      sessionStorage.removeItem('isAdmin');
-      router.push(isAdmin ? '/admin' : '/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+      window.location.replace(isAdmin ? '/admin' : '/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not complete sign-in. Please try again.');
       setLoading(false);
     }
   }

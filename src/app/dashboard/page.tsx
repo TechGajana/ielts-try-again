@@ -90,10 +90,10 @@ export default async function DashboardPage() {
   return (
     <Link
       href={href}
-      className="group flex items-center justify-between gap-4 rounded-xl border bg-card p-5 text-card-foreground transition-[box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="group flex items-center justify-between gap-4 rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_4px_18px_rgba(25,43,35,0.035)] transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#183b30]/20 hover:shadow-[0_14px_32px_rgba(25,43,35,0.09)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <div className="flex items-center gap-4">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#edf3ef] text-[#285442] transition-colors group-hover:bg-[#183b30] group-hover:text-white">
           <Icon className="size-5" aria-hidden />
         </div>
         <div>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
         </div>
       </div>
       <ArrowUpRight
-        className="size-5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        className="size-5 shrink-0 text-[#557163] opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:opacity-100"
         aria-hidden
       />
     </Link>
@@ -122,10 +122,10 @@ export default async function DashboardPage() {
   const availableCount = MODULES.filter((m) => m.ready).length;
 
   return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
+    <div className="flex min-h-svh flex-col bg-[#f6f7f4] text-foreground">
       {/* ───────── Header ───────── */}
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+      <header className="sticky top-0 z-10 border-b border-black/[0.06] bg-white/85 shadow-[0_1px_0_rgba(18,38,31,0.02)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             {organization?.logoUrl ? (
               <>
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
               </>
             ) : (
               <>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-[#183b30] text-white shadow-sm">
                   <GraduationCap className="size-5" aria-hidden />
                 </div>
                 <span className="text-base font-medium tracking-tight">IELTS Try Again</span>
@@ -150,9 +150,9 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:block">{studentName}</span>
+            <span className="hidden text-sm font-medium text-[#52635a] sm:block">{studentName}</span>
             <div
-              className="flex size-9 items-center justify-center rounded-full bg-muted text-xs font-medium ring-1 ring-border"
+              className="flex size-9 items-center justify-center rounded-full bg-[#e8efe9] text-xs font-semibold text-[#285442] ring-1 ring-[#183b30]/10"
               aria-hidden
             >
               {initials}
@@ -161,22 +161,34 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {/* ───────── Welcome banner ───────── */}
-        <section className="relative overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
+        <section className="relative overflow-hidden rounded-[1.75rem] bg-[#183b30] p-7 text-white shadow-[0_22px_60px_rgba(24,59,48,0.18)] sm:p-10 lg:p-12">
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-primary-foreground/10 blur-3xl"
+            className="pointer-events-none absolute -right-24 -top-32 size-[28rem] rounded-full bg-[#a9c6a6]/20 blur-3xl"
           />
 
           <div className="relative flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
             <div className="max-w-md">
+              <p className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#b9cfbd]">
+                <span className="size-1.5 rounded-full bg-[#b9cfbd]" />
+                Your IELTS workspace
+              </p>
               <h1 className="font-serif text-3xl leading-tight tracking-tight text-balance sm:text-4xl">
                 Welcome back, {firstName}
               </h1>
-              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/70 sm:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-white/70 sm:text-base">
                 Choose a module to start practicing. Every attempt is saved to your account.
               </p>
+              <Link
+                href="/mock-tests"
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#183b30] shadow-sm transition-colors hover:bg-[#eaf1eb] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-white/50"
+              >
+                <ClipboardCheck className="size-4" aria-hidden />
+                Explore full mock tests
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Link>
             </div>
 
             {/* Band-score ruler */}
@@ -189,7 +201,7 @@ export default async function DashboardPage() {
                     className="flex w-6 flex-col items-center gap-2"
                     style={{ opacity: 0.3 + (i / (BANDS.length - 1)) * 0.7 }}
                   >
-                    <span className={`w-px bg-primary-foreground ${whole ? 'h-9' : 'h-5'}`} />
+                    <span className={`w-px bg-white ${whole ? 'h-9' : 'h-5'}`} />
                     <span className="h-4 text-xs tabular-nums">{whole ? band.toFixed(1) : ''}</span>
                   </div>
                 );
@@ -218,10 +230,10 @@ export default async function DashboardPage() {
                   <li key={m.name}>
                     <Link
                       href={m.href}
-                      className="group flex h-full min-h-44 flex-col justify-between gap-8 rounded-xl border bg-card p-5 text-card-foreground transition-[transform,box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:hover:-translate-y-0.5"
+                      className="group flex h-full min-h-48 flex-col justify-between gap-8 rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_4px_18px_rgba(25,43,35,0.035)] transition-[transform,box-shadow,border-color] hover:-translate-y-1 hover:border-[#183b30]/20 hover:shadow-[0_14px_32px_rgba(25,43,35,0.09)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                        <div className="flex size-11 items-center justify-center rounded-xl bg-[#edf3ef] text-[#285442] transition-colors group-hover:bg-[#183b30] group-hover:text-white">
                           <Icon className="size-5" aria-hidden />
                         </div>
                         <ArrowUpRight

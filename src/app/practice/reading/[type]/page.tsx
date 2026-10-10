@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 import { getAttemptCounts } from '@/lib/attempts';
@@ -8,7 +9,8 @@ import { PracticeShell } from '@/components/practice/practice-shell';
 const MAX_ATTEMPTS = 3;
 
 async function getStudentId() {
-  const sessionCookie = (await cookies()).get('session')?.value!;
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) redirect('/login');
   const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
   return decoded.uid;
 }
@@ -30,8 +32,15 @@ export default async function ReadingTaskListPage({
 
   const tasks = tasksSnap.docs.map((d) => ({
     id: d.id,
-    ...(d.data() as { taskNumber: number }),
-  }));
+    ...(d.data() as {
+      taskNumber: number;
+      status?: string;
+      title?: string;
+      difficulty?: 'Easy' | 'Medium' | 'Hard';
+      description?: string;
+      questions?: unknown[];
+    }),
+  })).filter((task) => task.status !== 'Draft');
   const attemptCounts = await getAttemptCounts(studentId, 'reading', questionType);
 
   return (
@@ -90,7 +99,10 @@ export default async function ReadingTaskListPage({
                     className="flex h-full min-h-36 flex-col justify-between gap-6 rounded-xl border border-dashed bg-muted/40 p-5 text-muted-foreground"
                   >
                     <div className="flex items-start justify-between">
-                      <h3 className="font-serif text-2xl tracking-tight">Task {task.taskNumber}</h3>
+                      <div>
+                        <h3 className="font-serif text-2xl tracking-tight">{task.title || `Task ${task.taskNumber}`}</h3>
+                        {task.title && <p className="mt-1 text-sm text-muted-foreground">Task {task.taskNumber}</p>}
+                      </div>
                       <Lock className="size-5" aria-hidden />
                     </div>
                     <div className="space-y-2">
@@ -117,7 +129,11 @@ export default async function ReadingTaskListPage({
                   </div>
                   <div className="space-y-2">
                     {meter}
-                    <p className="text-sm text-muted-foreground">{status}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-muted-foreground">{status}</p>
+                      {task.difficulty && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{task.difficulty}</span>}
+                    </div>
+                    {task.description && <p className="line-clamp-2 text-xs text-muted-foreground">{task.description}</p>}
                   </div>
                 </Link>
               </li>

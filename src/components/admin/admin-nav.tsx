@@ -16,8 +16,9 @@ import {
   Video,
   type LucideIcon,
 } from 'lucide-react';
+import type { AdminRole } from '@/lib/admin-auth';
 
-const ITEMS: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
+const ITEMS: { href: string; label: string; icon: LucideIcon; exact?: boolean; primaryOnly?: boolean }[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/content/reading', label: 'Reading content', icon: BookOpen },
   { href: '/admin/content/listening', label: 'Listening content', icon: Headphones },
@@ -27,19 +28,20 @@ const ITEMS: { href: string; label: string; icon: LucideIcon; exact?: boolean }[
   { href: '/admin/content/materials', label: 'Study materials', icon: FileText },
   { href: '/admin/content/live-classes', label: 'Live classes', icon: CalendarClock },
   { href: '/admin/content/mock-tests', label: 'Mock tests', icon: ClipboardCheck },
-  { href: '/admin/content/organizations', label: 'Institutes', icon: Building2 },
-  { href: '/admin/students', label: 'Students', icon: Users },
+  { href: '/admin/content/organizations', label: 'Institutes', icon: Building2, primaryOnly: true },
+  { href: '/admin/students', label: 'Students', icon: Users, primaryOnly: true },
 ];
 
-export default function AdminNav() {
+export default function AdminNav({ role }: { role: AdminRole }) {
   const pathname = usePathname();
+  const items = ITEMS.filter((item) => !item.primaryOnly || role === 'PRIMARY_ADMIN');
 
   return (
     <nav
       aria-label="Admin"
       className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:overflow-visible lg:pb-0"
     >
-      {ITEMS.map(({ href, label, icon: Icon, exact }) => {
+      {items.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(href);
         return (
           <Link

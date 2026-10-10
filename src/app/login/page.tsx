@@ -32,12 +32,11 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { uid, isAdmin } = await loginStep1(username, password);
+      const { uid } = await loginStep1(username, password);
       sessionStorage.setItem('pendingUid', uid);
-      sessionStorage.setItem('isAdmin', String(isAdmin));
       router.push('/login/otp');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in. Please try again.');
       setLoading(false);
     }
   }

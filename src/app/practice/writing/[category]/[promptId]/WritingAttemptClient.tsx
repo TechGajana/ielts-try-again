@@ -227,7 +227,9 @@ export default function WritingAttemptClient({
             </label>
             <textarea
               id="answer"
+              aria-describedby="answer-paste-notice"
               value={text}
+              onPaste={(e) => e.preventDefault()}
               onChange={(e) => {
                 setText(e.target.value);
                 textRef.current = e.target.value;
@@ -238,6 +240,9 @@ export default function WritingAttemptClient({
               autoFocus
               className="min-h-96 w-full flex-1 resize-none rounded-xl border border-input bg-background p-4 font-serif text-[1.0625rem] leading-8 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
             />
+            <p id="answer-paste-notice" className="mt-2 text-xs text-muted-foreground">
+              Pasting is disabled during this timed exam. Type your answer here.
+            </p>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span className="tabular-nums sm:hidden">{words} words</span>
               <span>{dirty ? 'Saving…' : 'Draft saved'}</span>

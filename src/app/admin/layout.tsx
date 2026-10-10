@@ -1,16 +1,12 @@
-import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { adminAuth } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import { ArrowUpRight, GraduationCap } from 'lucide-react';
 import AdminNav from '@/components/admin/admin-nav';
+import { getAdminContext } from '@/lib/admin-auth';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const sessionCookie = (await cookies()).get('session')?.value;
-  if (!sessionCookie) redirect('/login');
-
-  const decoded = await adminAuth.verifySessionCookie(sessionCookie, true).catch(() => null);
-  if (!decoded || decoded.role !== 'admin') redirect('/login');
+  const admin = await getAdminContext();
+  if (!admin) redirect('/login');
 
   return (
     <div className="min-h-svh bg-muted/30 text-foreground lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -21,11 +17,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
           <div className="leading-tight">
             <p className="text-sm font-medium tracking-tight">IELTS Try Again</p>
-            <p className="text-xs text-muted-foreground">Admin</p>
+            <p className="text-xs text-muted-foreground">
+              {admin.role === 'PRIMARY_ADMIN' ? 'Primary admin' : 'Secondary admin'}
+            </p>
           </div>
         </div>
 
-        <AdminNav />
+        <AdminNav role={admin.role} />
 
         <div className="hidden border-t p-3 lg:block">
           <Link

@@ -63,7 +63,8 @@ function gradeObjective(
       number += 1;
       const expected = String(part.correctAnswers?.[q.id] ?? '').trim();
       const given = String(answers?.[`p${i}_${q.id}`] ?? '').trim();
-      const correct = !!expected && norm(given) === norm(expected);
+      const accepted = [expected, ...(q.alternativeAnswers ?? [])].filter(Boolean);
+      const correct = accepted.some((answer) => norm(given) === norm(String(answer)));
       if (expected) total += 1;
       if (correct) raw += 1;
       review.push({
@@ -73,6 +74,7 @@ function gradeObjective(
         yourAnswer: given,
         correct,
         correctAnswer: correct ? null : expected || null,
+        ...(q.explanation ? { explanation: String(q.explanation) } : {}),
       });
     }
   });
@@ -189,17 +191,21 @@ async function buildState(mockId: string, a: AttemptData): Promise<RunnerState> 
   } else if (section === 'reading') {
     payload = {
       section,
-      parts: (mock.reading ?? []).map((p: AttemptData, index: number) => ({
+      parts: await Promise.all((mock.reading ?? []).map(async (p: AttemptData, index: number) => ({
         index,
         title: p.title as string,
         instructions: (p.instructions ?? '') as string,
+        description: (p.description ?? '') as string,
         passage: p.passage as string,
+        passageFormat: p.passageFormat as 'markdown' | undefined,
+        diagramUrl: p.diagramKey ? await getPlaybackUrl(p.diagramKey as string) : null,
         questions: (p.questions ?? []).map((q: AttemptData) => ({
           id: q.id,
           text: q.text,
           options: q.options,
+          wordLimit: q.wordLimit,
         })),
-      })),
+      }))),
     };
   } else {
     const t1 = mock.writing?.task1 ?? {};

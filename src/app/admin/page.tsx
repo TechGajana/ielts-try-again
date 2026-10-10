@@ -17,6 +17,7 @@ import {
   TASKS_PER_TYPE,
 } from '@/lib/question-types';
 import { PageHeader } from '@/components/admin/ui';
+import { getAdminContext } from '@/lib/admin-auth';
 
 function tally(docs: QueryDocumentSnapshot[]) {
   const counts: Record<string, number> = {};
@@ -146,26 +147,31 @@ function CoveragePanel({
 }
 
 export default async function AdminHomePage() {
+  const admin = await getAdminContext();
+  if (!admin) return null;
   const [
     readingSnap,
     listeningSnap,
     attemptsCount,
-    studentsCount,
-    activeStudentsCount,
+    studentStats,
     writingCount,
     speakingCount,
   ] = await Promise.all([
     adminDb.collection('readingTasks').select('questionType').get(),
     adminDb.collection('listeningTasks').select('questionType').get(),
     adminDb.collection('attempts').count().get(),
-    adminDb.collection('students').count().get(),
-    adminDb.collection('students').where('accountStatus', '==', 'active').count().get(),
+    admin.role === 'PRIMARY_ADMIN'
+      ? Promise.all([
+          adminDb.collection('students').count().get(),
+          adminDb.collection('students').where('accountStatus', '==', 'active').count().get(),
+        ]).then(([total, active]) => ({ total: total.data().count, active: active.data().count }))
+      : Promise.resolve(null),
     adminDb.collection('writingPrompts').count().get(),
     adminDb.collection('speakingPrompts').count().get(),
   ]);
 
-  const totalStudents = studentsCount.data().count;
-  const activeStudents = activeStudentsCount.data().count;
+  const totalStudents = studentStats?.total ?? 0;
+  const activeStudents = studentStats?.active ?? 0;
   const suspendedStudents = totalStudents - activeStudents;
 
   return (
@@ -181,13 +187,15 @@ export default async function AdminHomePage() {
         <StatCard icon={PenLine} label="Writing tasks" value={writingCount.data().count} href="/admin/content/writing" />
         <StatCard icon={Mic} label="Speaking tasks" value={speakingCount.data().count} href="/admin/content/speaking" />
         <StatCard icon={Activity} label="Attempts so far" value={attemptsCount.data().count} />
-        <StatCard
-          icon={Users}
-          label="Active students"
-          value={activeStudents}
-          sublabel={`${totalStudents} total${suspendedStudents > 0 ? ` · ${suspendedStudents} suspended` : ''}`}
-          href="/admin/students"
-        />
+        {admin.role === 'PRIMARY_ADMIN' && (
+          <StatCard
+            icon={Users}
+            label="Active students"
+            value={activeStudents}
+            sublabel={`${totalStudents} total${suspendedStudents > 0 ? ` · ${suspendedStudents} suspended` : ''}`}
+            href="/admin/students"
+          />
+        )}
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">

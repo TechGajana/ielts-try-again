@@ -3,8 +3,13 @@ import DeleteTaskButton from '@/components/admin/delete-task-button';
 import { listOrganizations } from '@/lib/organizations';
 import AddOrganizationForm from './AddOrganizationForm';
 import { deleteOrganizationAction } from './actions';
+import { getAdminContext } from '@/lib/admin-auth';
+import AccessDenied from '@/components/admin/access-denied';
 
 export default async function AdminOrganizationsPage() {
+  const admin = await getAdminContext();
+  if (!admin) return null;
+  if (admin.role !== 'PRIMARY_ADMIN') return <AccessDenied />;
   const orgs = await listOrganizations();
 
   return (

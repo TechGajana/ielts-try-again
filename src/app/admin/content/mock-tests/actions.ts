@@ -52,11 +52,15 @@ export async function createMockTest(formData: FormData): Promise<{ ok: boolean;
         const d = await adminDb.collection('readingTasks').doc(id).get();
         if (!d.exists) throw new Error('A selected reading task no longer exists.');
         const x = d.data()!;
+        if (x.status === 'Draft') throw new Error('A selected reading task is still a draft.');
         return {
-          title: `Passage ${i + 1}`,
+          title: (x.title as string) || `Passage ${i + 1}`,
           sourceId: id,
           questionType: x.questionType as string,
           passage: x.passage as string,
+          ...(x.description ? { description: x.description as string } : {}),
+          ...(x.diagramKey ? { diagramKey: x.diagramKey as string } : {}),
+          ...(x.passageFormat ? { passageFormat: x.passageFormat as 'markdown' } : {}),
           instructions: (x.instructions ?? '') as string,
           questions: x.questions ?? [],
           correctAnswers: x.correctAnswers ?? {},

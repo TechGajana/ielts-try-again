@@ -12,6 +12,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { BackLink } from '@/components/practice/back-link';
+import type { ListeningQuestion } from '@/lib/listening-content';
 import { startAttempt, submitAttempt } from './actions';
 
 const primaryButton =
@@ -27,6 +28,53 @@ const inputClass =
 const TRANSFER_SECONDS = 120;
 
 type AudioPhase = 'loading' | 'ready' | 'playing' | 'transfer';
+type AttemptQuestion = Omit<ListeningQuestion, 'alternativeAnswers' | 'explanation' | 'mapLabel'> & {
+  mapLabel?: { x?: number; y?: number };
+};
+
+type AttemptTask = {
+  id: string;
+  taskNumber: number;
+  title: string;
+  section: string;
+  timerMinutes: number;
+  instructions: string;
+  questions: AttemptQuestion[];
+  mapImageUrl: string;
+  transcript: string;
+};
+
+function normalizeAnswer(value: string) {
+  const normalized = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed) && parsed.every((answer) => typeof answer === 'string')) {
+      return parsed.map((answer: string) => answer.trim().replace(/\s+/g, ' ').toLocaleLowerCase()).sort().join('\u001f');
+    }
+  } catch {
+    return normalized;
+  }
+  return normalized;
+}
+
+function answerForDisplay(value: string) {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed) && parsed.every((answer) => typeof answer === 'string')) return parsed.join(', ');
+  } catch {
+    return value;
+  }
+  return value;
+}
+
+function answerArray(value: string) {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((answer): answer is string => typeof answer === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 function TopBar({ questionType, title, children }: { questionType: string; title: string; children?: React.ReactNode }) {
   return (
@@ -47,12 +95,18 @@ function TopBar({ questionType, title, children }: { questionType: string; title
   );
 }
 
-export default function ListeningAttemptClient({ task, questionType }: { task: any; questionType: string }) {
+export default function ListeningAttemptClient({ task, questionType }: { task: AttemptTask; questionType: string }) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState<{ score: number; total: number; correctAnswers: Record<string, string> } | null>(null);
+  const [submitted, setSubmitted] = useState<{
+    score: number;
+    total: number;
+    correctAnswers: Record<string, string>;
+    alternativeAnswers: Record<string, string[]>;
+    explanations: Record<string, string>;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false);
   const [audioPhase, setAudioPhase] = useState<AudioPhase>('loading');
@@ -71,7 +125,7 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
       setSecondsLeft(Math.floor(remaining));
       setAudioPhase('ready');
     });
-  }, [task.id, questionType]);
+  }, [task.id, task.timerMinutes, questionType]);
 
   const handleSubmit = useCallback(async () => {
     if (!attemptId || submitted || inFlight.current) return;
@@ -149,7 +203,7 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
 
     return (
       <div className="min-h-svh bg-background text-foreground">
-        <TopBar questionType={questionType} title={`Task ${task.taskNumber} results`} />
+        <TopBar questionType={`${questionType} · ${task.section}`} title={`${task.title || `Task ${task.taskNumber}`} results`} />
 
         <main className="mx-auto max-w-3xl px-6 py-10">
           <BackLink href="/practice/listening" label="Listening" />
@@ -192,8 +246,11 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
             </h2>
 
             <ol className="mt-5 space-y-3">
-              {task.questions.map((q: any, i: number) => {
-                const isCorrect = answers[q.id] === submitted.correctAnswers[q.id];
+              {task.questions.map((q, i) => {
+                const accepted = [submitted.correctAnswers[q.id], ...(submitted.alternativeAnswers[q.id] ?? [])]
+                  .filter(Boolean)
+                  .map(normalizeAnswer);
+                const isCorrect = accepted.includes(normalizeAnswer(answers[q.id] ?? ''));
                 return (
                   <li key={q.id} className="rounded-xl border bg-card p-5 text-card-foreground">
                     <div className="flex gap-3">
@@ -217,7 +274,13 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
                           {!isCorrect && (
                             <div className="flex gap-2">
                               <dt className="w-28 shrink-0 text-muted-foreground">Correct answer</dt>
-                              <dd className="font-medium">{submitted.correctAnswers[q.id]}</dd>
+                              <dd className="font-medium">{answerForDisplay(submitted.correctAnswers[q.id])}</dd>
+                            </div>
+                          )}
+                          {submitted.explanations[q.id] && (
+                            <div className="mt-2 border-t pt-2">
+                              <dt className="text-muted-foreground">Explanation</dt>
+                              <dd>{submitted.explanations[q.id]}</dd>
                             </div>
                           )}
                         </dl>
@@ -247,14 +310,14 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
 
   /* ───────── Attempt ───────── */
   const total = task.questions.length;
-  const answeredCount = task.questions.filter((q: any) => answers[q.id]?.trim()).length;
+  const answeredCount = task.questions.filter((q) => answers[q.id]?.trim()).length;
   const mins = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
   const lowTime = secondsLeft <= 60;
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <TopBar questionType={questionType} title={`Task ${task.taskNumber}`}>
+      <TopBar questionType={`${questionType} · ${task.section}`} title={task.title || `Task ${task.taskNumber}`}>
         <span className="hidden text-sm tabular-nums text-muted-foreground sm:block">
           {answeredCount} of {total} answered
         </span>
@@ -345,9 +408,34 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
               {task.instructions}
             </p>
           )}
+          {task.mapImageUrl && (
+            <div className="relative mx-auto mt-6 inline-block max-w-full overflow-hidden rounded-xl border bg-background">
+              <img src={task.mapImageUrl} alt="Map or diagram for this listening task" className="block max-h-96 max-w-full object-contain" />
+              {task.questions.map((question, index) => {
+                const { x, y } = question.mapLabel ?? {};
+                if (x === undefined || y === undefined) return null;
+                return (
+                  <span
+                    key={question.id}
+                    className="absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-xs font-bold text-primary-foreground shadow"
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                    aria-hidden
+                  >
+                    {index + 1}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {task.transcript && (
+            <details className="mt-6 rounded-xl border p-4">
+              <summary className="cursor-pointer text-sm font-medium">View transcript</summary>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{task.transcript}</p>
+            </details>
+          )}
 
           <ol className="mt-8 space-y-8">
-            {task.questions.map((q: any, i: number) => {
+            {task.questions.map((q, i) => {
               const isAnswered = !!answers[q.id]?.trim();
               return (
                 <li key={q.id} className="flex gap-3">
@@ -363,20 +451,34 @@ export default function ListeningAttemptClient({ task, questionType }: { task: a
                     <p id={`label-${q.id}`} className="text-[0.9375rem] leading-relaxed">
                       {q.text}
                     </p>
+                    {q.matching?.item && <p className="mt-2 text-sm text-muted-foreground">{q.matching.item}</p>}
+                    {q.completion?.heading && <p className="mt-3 font-semibold">{q.completion.heading}</p>}
+                    {q.completion?.fieldLabel && <p className="mt-2 text-sm">{q.completion.fieldLabel}</p>}
+                    {q.tableCell && <p className="mt-2 text-sm text-muted-foreground">{q.tableCell.row} · {q.tableCell.column}</p>}
+                    {q.flowStep?.stepText && <p className="mt-2 rounded-lg border border-dashed p-3 text-sm">{q.flowStep.position}. {q.flowStep.stepText}</p>}
+                    {q.wordLimit && <p className="mt-2 text-xs text-muted-foreground">No more than {q.wordLimit} {q.wordLimit === 1 ? 'word' : 'words'}.</p>}
 
                     {q.options ? (
-                      <div role="radiogroup" aria-labelledby={`label-${q.id}`} className="mt-3 space-y-2">
+                      <div role={q.answerMode === 'multiple' ? 'group' : 'radiogroup'} aria-labelledby={`label-${q.id}`} className="mt-3 space-y-2">
                         {q.options.map((opt: string) => (
                           <label
                             key={opt}
                             className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card px-3.5 py-3 text-sm transition-colors hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/40"
                           >
                             <input
-                              type="radio"
+                              type={q.answerMode === 'multiple' ? 'checkbox' : 'radio'}
                               name={q.id}
                               value={opt}
-                              checked={answers[q.id] === opt}
-                              onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                              checked={q.answerMode === 'multiple' ? answerArray(answers[q.id] ?? '').includes(opt) : answers[q.id] === opt}
+                              onChange={(event) => {
+                                if (q.answerMode !== 'multiple') {
+                                  setAnswers((current) => ({ ...current, [q.id]: opt }));
+                                  return;
+                                }
+                                const current = answerArray(answers[q.id] ?? '');
+                                const selected = event.target.checked ? [...current, opt] : current.filter((value) => value !== opt);
+                                setAnswers((currentAnswers) => ({ ...currentAnswers, [q.id]: JSON.stringify(selected) }));
+                              }}
                               className="peer sr-only"
                             />
                             <span

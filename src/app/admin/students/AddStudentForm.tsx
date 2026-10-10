@@ -6,6 +6,7 @@ import { Field, inputClass } from '@/components/admin/ui';
 import SubmitButton from '@/components/admin/submit-button';
 import AccessPicker, { type AccessGroup } from './AccessPicker';
 import { createStudent } from './actions';
+import type { Batch } from '@/lib/student-management';
 
 function randomPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -15,9 +16,11 @@ function randomPassword() {
 export default function AddStudentForm({
   organizations,
   accessGroups,
+  batches,
 }: {
   organizations: { id: string; name: string }[];
   accessGroups: AccessGroup[];
+  batches: Batch[];
 }) {
   const [password, setPassword] = useState('');
   const [copied, setCopied] = useState(false);
@@ -56,12 +59,47 @@ export default function AddStudentForm({
   return (
     <form ref={formRef} action={handleAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="First name" htmlFor="firstName">
+          <input id="firstName" name="firstName" required autoComplete="given-name" className={inputClass} />
+        </Field>
+        <Field label="Last name" htmlFor="lastName">
+          <input id="lastName" name="lastName" required autoComplete="family-name" className={inputClass} />
+        </Field>
         <Field label="Username" htmlFor="username" hint="What the student types to log in.">
           <input id="username" name="username" required autoComplete="off" placeholder="e.g. arjun.k" className={inputClass} />
         </Field>
 
         <Field label="Email" htmlFor="email" hint="Used to send the one-time login code.">
           <input id="email" name="email" type="email" required autoComplete="off" placeholder="e.g. arjun@example.com" className={inputClass} />
+        </Field>
+        <Field label="Phone" htmlFor="phone">
+          <input id="phone" name="phone" type="tel" autoComplete="tel" className={inputClass} />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Course" htmlFor="course">
+          <input id="course" name="course" required placeholder="e.g. IELTS Academic" className={inputClass} />
+        </Field>
+        <Field label="Batch" htmlFor="batchId">
+          <select id="batchId" name="batchId" defaultValue="" className={inputClass}>
+            <option value="">No batch</option>
+            {batches.filter((batch) => batch.status === 'active').map((batch) => (
+              <option key={batch.id} value={batch.id}>{batch.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Current band" htmlFor="currentBand">
+          <input id="currentBand" name="currentBand" inputMode="decimal" className={inputClass} />
+        </Field>
+        <Field label="Target band" htmlFor="targetBand">
+          <input id="targetBand" name="targetBand" inputMode="decimal" className={inputClass} />
+        </Field>
+        <Field label="Enrollment date" htmlFor="enrollmentDate">
+          <input id="enrollmentDate" name="enrollmentDate" type="date" className={inputClass} />
+        </Field>
+        <Field label="Total fees" htmlFor="totalFees">
+          <input id="totalFees" name="totalFees" type="number" min="0" step="0.01" defaultValue="0" className={inputClass} />
         </Field>
       </div>
 

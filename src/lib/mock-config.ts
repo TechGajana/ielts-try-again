@@ -74,7 +74,10 @@ export interface ReadingPartView {
   index: number;
   title: string;
   instructions: string;
+  description?: string;
   passage: string;
+  passageFormat?: 'markdown';
+  diagramUrl: string | null;
   questions: MockQuestion[];
 }
 
@@ -121,6 +124,7 @@ export interface ReviewItem {
   yourAnswer: string;
   correct: boolean;
   correctAnswer: string | null; // only set for incorrect answers
+  explanation?: string;
 }
 
 export interface ObjectiveResult {

@@ -1,41 +1,73 @@
 import { adminDb } from '@/lib/firebase-admin';
 import { LISTENING_QUESTION_TYPES } from '@/lib/question-types';
-import { deleteListeningTask } from './actions';
-import { AddTaskPanel, PageHeader } from '@/components/admin/ui';
-import TaskList, { type AdminTask } from '@/components/admin/task-list';
-import UploadForm from './UploadForm';
+import {
+  LISTENING_TYPE_DESCRIPTIONS,
+  listeningTypeSlug,
+  type ListeningDifficulty,
+  type ListeningTypeSummary,
+} from '@/lib/listening-content';
+import { PageHeader } from '@/components/admin/ui';
+import Link from 'next/link';
+import { ArrowLeft, Plus } from 'lucide-react';
+import ListeningTypeGrid from './ListeningTypeGrid';
 
 export default async function AdminListeningContentPage() {
-  // Uses the questionType + taskNumber composite index already in firestore.indexes.json
-  const snap = await adminDb.collection('listeningTasks').orderBy('questionType').orderBy('taskNumber').get();
-
-  const tasks: AdminTask[] = snap.docs.map((d) => {
-    const data = d.data();
-    const audioKey = (data.audioKey as string | undefined) ?? '';
+  const tasks = await adminDb
+    .collection('listeningTasks')
+    .select('questionType', 'questions', 'status', 'difficulty')
+    .get();
+  const summaries: ListeningTypeSummary[] = LISTENING_QUESTION_TYPES.map((name) => {
+    const typedTasks = tasks.docs.filter((doc) => doc.get('questionType') === name);
+    const difficulties: Record<ListeningDifficulty, number> = { Easy: 0, Medium: 0, Hard: 0 };
+    for (const doc of typedTasks) {
+      const difficulty = doc.get('difficulty') as string | undefined;
+      if (difficulty === 'Easy' || difficulty === 'Medium' || difficulty === 'Hard') difficulties[difficulty]++;
+      else difficulties.Medium++;
+    }
     return {
-      id: d.id,
-      questionType: data.questionType as string,
-      taskNumber: data.taskNumber as number,
-      questionCount: (data.questions?.length ?? 0) as number,
-      timerMinutes: data.timerMinutes as number | undefined,
-      // "listening/1700000000000-track.mp3" -> "track.mp3"
-      audioName: audioKey ? audioKey.split('/').pop()?.replace(/^\d+-/, '') : undefined,
+      name,
+      slug: listeningTypeSlug(name),
+      description: LISTENING_TYPE_DESCRIPTIONS[name],
+      practiceSets: typedTasks.length,
+      questions: typedTasks.reduce((total, doc) => {
+        const questions = doc.get('questions');
+        return total + (Array.isArray(questions) ? questions.length : 0);
+      }, 0),
+      published: typedTasks.filter((doc) => doc.get('status') !== 'Draft').length,
+      drafts: typedTasks.filter((doc) => doc.get('status') === 'Draft').length,
+      difficulties,
     };
   });
 
   return (
     <>
+      <Link href="/admin" className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-4" aria-hidden /> Admin dashboard
+      </Link>
       <PageHeader
-        title="Listening content"
-        description="Upload audio and add the questions students answer while they listen."
+        title="IELTS Listening Practice"
+        description="Manage listening audio, questions, answers and practice content."
       />
 
-      <AddTaskPanel title="Add a listening task">
-        <UploadForm />
-      </AddTaskPanel>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
+        <p className="text-sm text-muted-foreground">
+          {tasks.size} practice {tasks.size === 1 ? 'set' : 'sets'} across {LISTENING_QUESTION_TYPES.length} question types
+        </p>
+        <Link
+          href="#question-types"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <Plus className="size-4" aria-hidden /> Add new practice set
+        </Link>
+      </div>
 
-      <h2 className="mb-5 text-lg font-semibold tracking-tight">Existing tasks ({tasks.length})</h2>
-      <TaskList tasks={tasks} types={LISTENING_QUESTION_TYPES} deleteAction={deleteListeningTask} />
+      <section id="question-types" aria-labelledby="listening-question-types">
+        <div className="mb-4">
+          <h2 id="listening-question-types" className="text-lg font-semibold tracking-tight">Question types</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a question type to manage its practice sets.</p>
+        </div>
+        <ListeningTypeGrid types={summaries} />
+      </section>
     </>
   );
 }

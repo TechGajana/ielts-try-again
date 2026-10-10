@@ -1,9 +1,11 @@
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 import ListeningBrowser from './ListeningBrowser';
+import { redirect } from 'next/navigation';
 
 async function getStudentId() {
-  const sessionCookie = (await cookies()).get('session')?.value!;
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) redirect('/login');
   const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
   return decoded.uid;
 }
@@ -12,7 +14,7 @@ export default async function ListeningTypesPage() {
   const studentId = await getStudentId();
 
   const [tasksSnap, attemptsSnap] = await Promise.all([
-    adminDb.collection('listeningTasks').select('questionType').get(),
+    adminDb.collection('listeningTasks').select('questionType', 'status').get(),
     adminDb
       .collection('attempts')
       .where('studentId', '==', studentId)
@@ -30,6 +32,7 @@ export default async function ListeningTypesPage() {
   // { 'Multiple Choice': { done: 8, total: 12 }, ... }
   const progress: Record<string, { done: number; total: number }> = {};
   for (const doc of tasksSnap.docs) {
+    if (doc.get('status') === 'Draft') continue;
     const type = doc.get('questionType') as string;
     progress[type] ??= { done: 0, total: 0 };
     progress[type].total += 1;

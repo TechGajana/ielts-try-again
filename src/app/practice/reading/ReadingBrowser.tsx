@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, ChevronLeft, CircleCheck, Play, Search } from 'lucide-react';
+import { BookOpen, ChevronLeft, CircleCheck, GraduationCap, LayoutDashboard, Play, Search } from 'lucide-react';
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard';
 type Progress = Record<string, { done: number; total: number }>;
@@ -123,7 +123,7 @@ function TypeRow({
     <li>
       <Link
         href={`/practice/reading/${encodeURIComponent(name)}`}
-        className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50"
+        className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[#f4f7f4] focus-visible:bg-[#f4f7f4] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50"
       >
         {body}
       </Link>
@@ -170,13 +170,27 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
   })).filter((g) => g.types.length > 0);
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-10">
+    <div className="min-h-svh bg-[#f6f7f4] text-foreground">
+      <header className="border-b border-black/[0.06] bg-white/85 shadow-[0_1px_0_rgba(18,38,31,0.02)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/dashboard" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-[#183b30] text-white shadow-sm">
+              <GraduationCap className="size-5" aria-hidden />
+            </span>
+            <span className="text-sm font-semibold tracking-tight">IELTS <span className="text-[#68877a]">STUDIO</span></span>
+          </Link>
+          <Link href="/dashboard" className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/[0.08] bg-white px-3 text-xs font-medium text-[#35463f] shadow-sm transition-colors hover:bg-[#f5f8f5] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
+            <LayoutDashboard className="size-3.5" aria-hidden />
+            Workspace
+          </Link>
+        </div>
+      </header>
+      <div className="mx-auto grid w-full max-w-7xl flex-1 gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-12 lg:px-8">
         {/* ───────── Sidebar ───────── */}
         <aside className="lg:sticky lg:top-10 lg:self-start">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-full bg-muted/60 py-1 pl-1 pr-3.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white py-1 pl-1 pr-3.5 text-sm text-[#52635a] shadow-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
           >
             <span className="flex size-7 items-center justify-center rounded-full bg-background shadow-xs">
               <ChevronLeft className="size-4" aria-hidden />
@@ -184,11 +198,12 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
             Dashboard
           </Link>
 
-          <div className="mt-8 flex size-12 items-center justify-center rounded-xl border bg-muted shadow-xs">
+          <div className="mt-8 flex size-12 items-center justify-center rounded-2xl bg-[#183b30] text-white shadow-[0_8px_18px_rgba(24,59,48,0.18)]">
             <BookOpen className="size-5" aria-hidden />
           </div>
 
-          <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68877a]">Practice studio</p>
+          <h1 className="mt-2 font-serif text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
             Reading
             <br />
             Module
@@ -198,7 +213,7 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
             information to hit your target band score.
           </p>
 
-          <div className="mt-8 rounded-2xl border bg-card p-5 text-card-foreground shadow-sm">
+          <div className="mt-8 rounded-2xl border border-black/[0.07] bg-white p-5 text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.05)]">
             <div className="flex items-baseline justify-between">
               <h2 className="text-sm font-medium">Reading Mastery</h2>
               <span className="text-2xl font-bold tabular-nums">{percent}%</span>
@@ -212,7 +227,7 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
               aria-label="Reading mastery"
             >
               <div
-                className="h-full rounded-full bg-foreground transition-[width] duration-500"
+                className="h-full rounded-full bg-[#285442] transition-[width] duration-500"
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -223,7 +238,7 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
             {target ? (
               <Link
                 href={`/practice/reading/${encodeURIComponent(target.name)}`}
-                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#183b30] text-sm font-semibold text-white shadow-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#244d3d] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <Play className="size-3.5 fill-current" aria-hidden />
                 {ctaLabel}
@@ -255,7 +270,7 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setQuery('')}
-              className="h-12 w-full rounded-xl border border-input bg-card pl-11 pr-16 text-base shadow-sm outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 md:text-sm"
+              className="h-12 w-full rounded-xl border border-black/[0.08] bg-white pl-11 pr-16 text-base shadow-[0_4px_14px_rgba(25,43,35,0.04)] outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground/70 focus-visible:border-[#68877a] focus-visible:ring-[3px] focus-visible:ring-[#68877a]/20 md:text-sm"
             />
             <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border bg-background px-1.5 py-0.5 font-sans text-[11px] text-muted-foreground shadow-xs sm:block">
               ⌘ K
@@ -283,7 +298,7 @@ export default function ReadingBrowser({ progress }: { progress: Progress }) {
                     <BookOpen className="size-3.5" aria-hidden />
                     {group.title}
                   </h2>
-                  <ul className="divide-y overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm">
+                  <ul className="divide-y divide-black/[0.05] overflow-hidden rounded-2xl border border-black/[0.07] bg-white text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.04)]">
                     {group.types.map((t) => (
                       <TypeRow
                         key={t.name}

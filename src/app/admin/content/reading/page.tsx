@@ -1,73 +1,52 @@
+import Link from 'next/link';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { adminDb } from '@/lib/firebase-admin';
 import { READING_QUESTION_TYPES } from '@/lib/question-types';
-import { createReadingTask, deleteReadingTask } from './actions';
-import { AddTaskPanel, Field, PageHeader, QuestionsSection, TaskBasics, inputClass, textareaClass } from '@/components/admin/ui';
-import SubmitButton from '@/components/admin/submit-button';
-import TaskList, { type AdminTask } from '@/components/admin/task-list';
-import EditReadingTaskDialog from './EditReadingTaskDialog';
+import { READING_TYPE_DESCRIPTIONS, readingTypeSlug } from '@/lib/reading-content';
+import { PageHeader } from '@/components/admin/ui';
+import ReadingTypeGrid from './ReadingTypeGrid';
 
 export default async function AdminReadingContentPage() {
-  // Uses the questionType + taskNumber composite index already in firestore.indexes.json
-  const snap = await adminDb.collection('readingTasks').orderBy('questionType').orderBy('taskNumber').get();
-
-  const tasks: AdminTask[] = snap.docs.map((d) => {
-    const data = d.data();
+  const tasks = await adminDb.collection('readingTasks').select('questionType', 'questions', 'status').get();
+  const summaries = READING_QUESTION_TYPES.map((name) => {
+    const typedTasks = tasks.docs.filter((doc) => doc.get('questionType') === name);
     return {
-      id: d.id,
-      questionType: data.questionType as string,
-      taskNumber: data.taskNumber as number,
-      questionCount: (data.questions?.length ?? 0) as number,
-      timerMinutes: data.timerMinutes as number | undefined,
+      name,
+      slug: readingTypeSlug(name),
+      description: READING_TYPE_DESCRIPTIONS[name],
+      practiceSets: typedTasks.length,
+      questions: typedTasks.reduce((total, doc) => total + (Array.isArray(doc.get('questions')) ? doc.get('questions').length : 0), 0),
+      published: typedTasks.filter((doc) => doc.get('status') !== 'Draft').length,
+      drafts: typedTasks.filter((doc) => doc.get('status') === 'Draft').length,
     };
   });
 
   return (
     <>
-      <PageHeader
-        title="Reading content"
-        description="Add and remove the passages and questions students practice with."
-      />
+      <Link href="/admin" className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-4" aria-hidden /> Admin dashboard
+      </Link>
+      <PageHeader title="IELTS Reading Practice" description="Manage reading passages, questions, answers and practice content." />
 
-      <AddTaskPanel title="Add a reading task">
-        <form action={createReadingTask} className="space-y-8">
-          <TaskBasics types={READING_QUESTION_TYPES} defaultTimer={10} />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
+        <p className="text-sm text-muted-foreground">
+          {tasks.size} practice {tasks.size === 1 ? 'set' : 'sets'} across {READING_QUESTION_TYPES.length} question types
+        </p>
+        <Link
+          href="#question-types"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <Plus className="size-4" aria-hidden /> Add new practice set
+        </Link>
+      </div>
 
-          <Field label="Passage" htmlFor="passage">
-            <textarea
-              id="passage"
-              name="passage"
-              required
-              rows={10}
-              placeholder="Paste the reading passage here"
-              className={textareaClass}
-            />
-          </Field>
-
-          <Field label="Instructions" htmlFor="instructions" hint="Shown to students above the questions.">
-            <input
-              id="instructions"
-              name="instructions"
-              required
-              placeholder="e.g. Choose the correct letter, A, B, C or D."
-              className={inputClass}
-            />
-          </Field>
-
-          <QuestionsSection />
-
-          <div className="flex justify-end border-t pt-6">
-            <SubmitButton pendingLabel="Creating…">Create task</SubmitButton>
-          </div>
-        </form>
-      </AddTaskPanel>
-
-      <h2 className="mb-5 text-lg font-semibold tracking-tight">Existing tasks ({tasks.length})</h2>
-      <TaskList
-        tasks={tasks}
-        types={READING_QUESTION_TYPES}
-        deleteAction={deleteReadingTask}
-        renderEdit={(t) => <EditReadingTaskDialog taskId={t.id} label={`${t.questionType} task ${t.taskNumber}`} />}
-      />
+      <section id="question-types" aria-labelledby="reading-question-types">
+        <div className="mb-4">
+          <h2 id="reading-question-types" className="text-lg font-semibold tracking-tight">Question types</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a question type to manage its practice sets.</p>
+        </div>
+        <ReadingTypeGrid types={summaries} />
+      </section>
     </>
   );
 }

@@ -22,18 +22,21 @@ export default async function MockListPage() {
 
   return (
     <PracticeShell crumbs={[{ label: 'Mock tests' }]}>
-      <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Full-length mock tests</h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Sit a full IELTS-style test in one go: Listening, then Reading, then Writing. Each mock can be attempted
-          only once, and there is no pause once you begin. Speaking is not part of the mock test.
-        </p>
-      </div>
+      <section className="relative overflow-hidden rounded-[1.75rem] bg-[#183b30] p-7 text-white shadow-[0_22px_60px_rgba(24,59,48,0.16)] sm:p-10">
+        <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 size-80 rounded-full bg-[#a9c6a6]/20 blur-3xl" />
+        <div className="relative max-w-2xl">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#b9cfbd]">Exam simulation</p>
+          <h1 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">Full-length mock tests</h1>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
+            Build confidence with a complete IELTS-style exam. Move through Listening, Reading and Writing in one focused sitting.
+          </p>
+        </div>
+      </section>
 
-      <ul className="mt-8 grid gap-3 sm:grid-cols-3">
+      <ul className="mt-6 grid gap-3 sm:grid-cols-3">
         {sections.map(({ icon: Icon, name, minutes }) => (
-          <li key={name} className="flex items-center gap-3 rounded-xl border bg-card p-4 text-card-foreground">
-            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <li key={name} className="flex items-center gap-3 rounded-2xl border border-black/[0.07] bg-white p-4 text-card-foreground shadow-[0_4px_18px_rgba(25,43,35,0.035)]">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[#edf3ef] text-[#285442]">
               <Icon className="size-5" aria-hidden />
             </span>
             <div>
@@ -43,19 +46,19 @@ export default async function MockListPage() {
           </li>
         ))}
       </ul>
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-[#66766d]">
         <Clock className="size-3.5" aria-hidden />
         About {totalMinutes} minutes in total
       </p>
 
-      <ul className="mt-8 divide-y overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm">
+      <ul className="mt-8 divide-y divide-black/[0.05] overflow-hidden rounded-2xl border border-black/[0.07] bg-white text-card-foreground shadow-[0_8px_24px_rgba(25,43,35,0.045)]">
         {slots.map((n) => {
           const m = byNumber[n];
 
           if (!m) {
             return (
               <li key={n} className="flex items-center gap-4 px-5 py-4 text-muted-foreground">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium tabular-nums">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f0f3f0] text-sm font-semibold tabular-nums">
                   {n}
                 </span>
                 <div className="flex-1">
@@ -67,8 +70,8 @@ export default async function MockListPage() {
           }
 
           return (
-            <li key={m.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium tabular-nums">
+            <li key={m.id} className="flex flex-wrap items-center gap-4 px-5 py-4 transition-colors hover:bg-[#fbfcfa] sm:px-6">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#edf3ef] text-sm font-semibold text-[#285442] tabular-nums">
                 {m.mockNumber}
               </span>
               <div className="min-w-0 flex-1">
@@ -88,14 +91,14 @@ export default async function MockListPage() {
               {m.state === 'completed' ? (
                 <Link
                   href={`/mock-tests/${m.id}/results`}
-                  className="inline-flex h-10 items-center rounded-lg border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+                  className="inline-flex h-10 items-center rounded-xl border border-black/[0.08] bg-white px-4 text-sm font-semibold transition-colors hover:bg-[#f2f6f2] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                 >
                   View Results
                 </Link>
               ) : (
                 <Link
                   href={`/mock-tests/${m.id}`}
-                  className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="inline-flex h-10 items-center rounded-xl bg-[#183b30] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#244d3d] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   {m.state === 'in_progress' ? 'Continue' : 'Start Mock Test'}
                 </Link>

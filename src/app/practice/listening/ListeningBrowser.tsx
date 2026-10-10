@@ -20,6 +20,11 @@ const GROUPS: ModuleGroup[] = [
   {
     title: 'Information Completion',
     types: [
+      { name: 'Form Completion', difficulty: 'Medium' },
+      { name: 'Note Completion', difficulty: 'Medium' },
+      { name: 'Table Completion', difficulty: 'Medium' },
+      { name: 'Flow-Chart Completion', difficulty: 'Medium' },
+      { name: 'Summary Completion', difficulty: 'Medium' },
       { name: 'Form/Note/Table/Flow-chart/Summary Completion', difficulty: 'Medium' },
       { name: 'Sentence Completion', difficulty: 'Easy' },
       { name: 'Short Answer Questions', difficulty: 'Easy' },

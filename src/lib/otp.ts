@@ -26,18 +26,33 @@ export async function createAndSendOtp(uid: string, email: string) {
 }
 
 export async function verifyOtp(uid: string, submittedCode: string) {
+  if (!/^\d{6}$/.test(submittedCode)) throw new Error('Enter the 6-digit code from your latest email.');
+
   const ref = adminDb.collection('otps').doc(uid);
-  const doc = await ref.get();
-  if (!doc.exists) throw new Error('OTP not found. Please login again.');
+  const error = await adminDb.runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    if (!doc.exists) return 'No active verification code was found. Return to login to request a new code.';
 
-  const { code, expiresAt, attempts } = doc.data()!;
-  if (Date.now() > expiresAt) throw new Error('OTP expired. Please login again.');
-  if (attempts >= 5) throw new Error('Too many attempts. Please login again.');
+    const data = doc.data()!;
+    if (Date.now() > (data.expiresAt as number)) {
+      tx.delete(ref);
+      return 'This verification code has expired. Return to login to request a new code.';
+    }
 
-  if (submittedCode !== code) {
-    await ref.update({ attempts: attempts + 1 });
-    throw new Error('Incorrect OTP.');
-  }
+    const attempts = data.attempts as number;
+    if (attempts >= 5) {
+      tx.delete(ref);
+      return 'Too many incorrect codes. Return to login to request a new code.';
+    }
 
-  await ref.delete(); // consume it
+    if (submittedCode !== data.code) {
+      tx.update(ref, { attempts: attempts + 1 });
+      return 'Incorrect verification code.';
+    }
+
+    tx.delete(ref);
+    return null;
+  });
+
+  if (error) throw new Error(error);
 }

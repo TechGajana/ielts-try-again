@@ -61,7 +61,6 @@ Include every criterion key exactly once. Be honest and calibrated; do not infla
   const completion = await openai.chat.completions.create({
     model: process.env.OPENAI_SPEAKING_MODEL ?? 'gpt-5-nano',
     response_format: { type: 'json_object' },
-    temperature: 0.2,
     messages: [
       { role: 'system', content: system },
       {

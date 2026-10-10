@@ -92,12 +92,52 @@ export async function startAttemptShared(params: StartAttemptParams): Promise<St
 export async function submitAutoScoredAttempt(
   attemptId: string,
   correctAnswers: Record<string, string>,
-  studentAnswers: Record<string, string>
+  studentAnswers: Record<string, string>,
+  alternativeAnswers: Record<string, string[]> = {},
+  multipleAnswerIds: string[] = [],
+  wordLimits: Record<string, number> = {}
 ) {
   let score = 0;
   const total = Object.keys(correctAnswers).length;
+  const multipleAnswers = new Set(multipleAnswerIds);
   Object.entries(correctAnswers).forEach(([qId, correct]) => {
-    if (studentAnswers[qId] === correct) score++;
+    const studentAnswer = studentAnswers[qId] ?? '';
+    const wordLimit = wordLimits[qId];
+    if (wordLimit) {
+      const answerCount = multipleAnswers.has(qId)
+        ? (() => {
+            try {
+              const values = JSON.parse(studentAnswer) as unknown;
+              return Array.isArray(values) ? values.length : 0;
+            } catch {
+              return 0;
+            }
+          })()
+        : studentAnswer.trim().split(/\s+/).filter(Boolean).length;
+      if (answerCount > wordLimit) return;
+    }
+    const normalizeText = (answer: string) => answer.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    const normalizeSet = (answer: string) => {
+      const trimmed = answer.trim();
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (Array.isArray(parsed) && parsed.every((value) => typeof value === 'string')) {
+          return parsed.map((value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase()).sort().join('\u001f');
+        }
+      } catch {
+        return trimmed.replace(/\s+/g, ' ').toLocaleLowerCase();
+      }
+      return trimmed.replace(/\s+/g, ' ').toLocaleLowerCase();
+    };
+    if (multipleAnswers.has(qId)) {
+      const accepted = [correct, ...(alternativeAnswers[qId] ?? [])].map(normalizeSet);
+      if (accepted.includes(normalizeSet(studentAnswer))) score++;
+    } else if (alternativeAnswers[qId]?.length) {
+      const accepted = [correct, ...alternativeAnswers[qId]].map(normalizeText);
+      if (accepted.includes(normalizeText(studentAnswer))) score++;
+    } else if (studentAnswer === correct) {
+      score++;
+    }
   });
 
   await adminDb.collection('attempts').doc(attemptId).update({
@@ -108,7 +148,7 @@ export async function submitAutoScoredAttempt(
     score,
   });
 
-  return { score, total, correctAnswers };
+  return { score, total, correctAnswers, alternativeAnswers };
 }
 /**
  * Gets how many completed attempts a student has used for a given task.

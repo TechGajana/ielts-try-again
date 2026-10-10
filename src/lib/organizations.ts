@@ -1,4 +1,5 @@
 import { adminDb } from './firebase-admin';
+import { requirePrimaryAdmin } from './admin-auth';
 import { getPlaybackUrl, getUploadUrl } from './r2-presign';
 
 export type Organization = {
@@ -8,6 +9,7 @@ export type Organization = {
 };
 
 export async function listOrganizations(): Promise<Organization[]> {
+  await requirePrimaryAdmin();
   const snap = await adminDb.collection('organizations').orderBy('name').get();
   return Promise.all(
     snap.docs.map(async (d) => {
@@ -33,12 +35,14 @@ export async function getOrganization(id: string): Promise<Organization | null> 
 }
 
 export async function getLogoUploadUrl(fileName: string, contentType: string) {
+  await requirePrimaryAdmin();
   const key = `organizations/${Date.now()}-${fileName}`;
   const uploadUrl = await getUploadUrl(key, contentType);
   return { uploadUrl, key };
 }
 
 export async function createOrganization(input: { name: string; logoKey: string }) {
+  await requirePrimaryAdmin();
   const name = input.name.trim();
   if (!name) throw new Error('Institute name is required.');
   if (!input.logoKey) throw new Error('A logo is required.');
@@ -50,6 +54,7 @@ export async function createOrganization(input: { name: string; logoKey: string 
 }
 
 export async function deleteOrganization(id: string) {
+  await requirePrimaryAdmin();
   await adminDb.collection('organizations').doc(id).delete();
   // Students keep their organizationId; the dashboard falls back to default
   // branding automatically if the org can no longer be found.

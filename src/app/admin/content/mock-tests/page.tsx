@@ -9,7 +9,7 @@ export default async function AdminMockTestsPage() {
   const [mocksSnap, listeningSnap, readingSnap, writingSnap] = await Promise.all([
     adminDb.collection('mockTests').orderBy('mockNumber').get(),
     adminDb.collection('listeningTasks').select('questionType', 'taskNumber').get(),
-    adminDb.collection('readingTasks').select('questionType', 'taskNumber').get(),
+    adminDb.collection('readingTasks').select('questionType', 'taskNumber', 'status').get(),
     adminDb.collection('writingPrompts').select('taskPart', 'category', 'questionNumber', 'prompt').get(),
   ]);
 
@@ -59,7 +59,7 @@ export default async function AdminMockTestsPage() {
       <AddTaskPanel title="Add a mock test">
         <AddMockForm
           listening={taskOptions(listeningSnap.docs)}
-          reading={taskOptions(readingSnap.docs)}
+          reading={taskOptions(readingSnap.docs.filter((doc) => doc.get('status') !== 'Draft'))}
           task1={promptOptions('task1')}
           task2={promptOptions('task2')}
         />

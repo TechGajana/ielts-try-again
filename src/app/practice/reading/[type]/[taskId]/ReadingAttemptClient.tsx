@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BookOpen, CircleCheck, CircleX, Clock, LoaderCircle } from 'lucide-react';
 import { BackLink } from '@/components/practice/back-link';
+import ReadingPassage from '@/components/practice/reading-passage';
+import type { ReadingTaskView } from '@/lib/reading-content';
 import { startAttempt, submitAttempt } from './actions';
 
 const primaryButton =
@@ -14,6 +16,13 @@ const inputClass =
   'mt-3 h-11 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm text-foreground ' +
   'placeholder:text-muted-foreground/70 shadow-xs outline-none transition-[color,box-shadow,border-color] ' +
   'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40';
+
+function optionsForQuestion(questionType: string, question: { options?: string[] }): string[] | undefined {
+  if (question.options?.length) return question.options;
+  if (questionType === 'Identifying Information') return ['TRUE', 'FALSE', 'NOT GIVEN'];
+  if (questionType === "Identifying Writer's Views") return ['YES', 'NO', 'NOT GIVEN'];
+  return undefined;
+}
 
 function TopBar({ questionType, title, children }: { questionType: string; title: string; children?: React.ReactNode }) {
   return (
@@ -34,24 +43,38 @@ function TopBar({ questionType, title, children }: { questionType: string; title
   );
 }
 
-export default function ReadingAttemptClient({ task, questionType }: { task: any; questionType: string }) {
+export default function ReadingAttemptClient({
+  task,
+  diagramUrl,
+  questionType,
+}: {
+  task: ReadingTaskView;
+  diagramUrl: string | null;
+  questionType: string;
+}) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState<{ score: number; total: number; correctAnswers: Record<string, string> } | null>(null);
+  const [submitted, setSubmitted] = useState<{
+    score: number;
+    total: number;
+    correctAnswers: Record<string, string>;
+    acceptedAnswers: Record<string, string[]>;
+    explanations: Record<string, string>;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false); // UI only: spinner on the submit buttons
   const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false); // UI only: shows a different message when the lock caused submission
   const inFlight = useRef(false); // guards against double submits (button click + timer + tab switch)
   const router = useRouter();
 
   useEffect(() => {
-    startAttempt(task.id, questionType).then(({ attemptId, startTime }) => {
+    startAttempt(task.id).then(({ attemptId, startTime }) => {
       setAttemptId(attemptId);
       const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
-      const remaining = Math.max(0, task.timerMinutes * 60 - elapsed);
+      const remaining = Math.max(0, (Number(task.timerMinutes) || 10) * 60 - elapsed);
       setSecondsLeft(Math.floor(remaining));
     });
-  }, [task.id, questionType]);
+  }, [task.id, task.timerMinutes]);
 
   const handleSubmit = useCallback(async () => {
     if (!attemptId || submitted || inFlight.current) return;
@@ -108,7 +131,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
 
     return (
       <div className="min-h-svh bg-background text-foreground">
-        <TopBar questionType={questionType} title={`Task ${task.taskNumber} results`} />
+        <TopBar questionType={questionType} title={`${task.title || `Task ${task.taskNumber}`} results`} />
 
         <main className="mx-auto max-w-3xl px-6 py-10">
           <BackLink href="/practice/reading" label="Reading" />
@@ -144,15 +167,16 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
               This attempt was submitted automatically because you switched away from the tab.
             </div>
           )}
-
           <section className="mt-10" aria-labelledby="review-heading">
             <h2 id="review-heading" className="font-serif text-2xl tracking-tight">
               Review your answers
             </h2>
 
             <ol className="mt-5 space-y-3">
-              {task.questions.map((q: any, i: number) => {
-                const isCorrect = answers[q.id] === submitted.correctAnswers[q.id];
+              {task.questions.map((q, i) => {
+                const acceptedAnswers = submitted.acceptedAnswers?.[q.id] ?? [submitted.correctAnswers[q.id] ?? ''];
+                const normalize = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+                const isCorrect = acceptedAnswers.some((answer) => normalize(answer) === normalize(answers[q.id] ?? ''));
                 return (
                   <li key={q.id} className="rounded-xl border bg-card p-5 text-card-foreground">
                     <div className="flex gap-3">
@@ -183,6 +207,12 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
                               <dd className="font-medium">{submitted.correctAnswers[q.id]}</dd>
                             </div>
                           )}
+                          {submitted.explanations?.[q.id] && (
+                            <div className="flex gap-2">
+                              <dt className="w-28 shrink-0 text-muted-foreground">Explanation</dt>
+                              <dd>{submitted.explanations[q.id]}</dd>
+                            </div>
+                          )}
                         </dl>
                       </div>
                     </div>
@@ -210,14 +240,14 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
 
   /* ───────── Attempt ───────── */
   const total = task.questions.length;
-  const answeredCount = task.questions.filter((q: any) => answers[q.id]?.trim()).length;
+  const answeredCount = task.questions.filter((q) => answers[q.id]?.trim()).length;
   const mins = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
   const lowTime = secondsLeft <= 60;
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <TopBar questionType={questionType} title={`Task ${task.taskNumber}`}>
+      <TopBar questionType={questionType} title={task.title || `Task ${task.taskNumber}`}>
         <span className="hidden text-sm tabular-nums text-muted-foreground sm:block">
           {answeredCount} of {total} answered
         </span>
@@ -254,12 +284,17 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
           className="border-b px-6 py-8 lg:h-[calc(100svh-4rem-2.5rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
         >
           <div
-            className="no-copy mx-auto max-w-prose whitespace-pre-wrap font-serif text-[1.0625rem] leading-8"
+            className="no-copy mx-auto max-w-prose font-serif text-[1.0625rem] leading-8"
             onCopy={(e) => e.preventDefault()}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {task.passage}
+            <ReadingPassage passage={task.passage} format={task.passageFormat} />
           </div>
+          {task.description && <p className="mx-auto mt-5 max-w-prose text-sm text-muted-foreground">{task.description}</p>}
+          {diagramUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed R2 URL
+            <img src={diagramUrl} alt="Reading task diagram" className="mx-auto mt-6 max-h-96 max-w-full rounded-lg border object-contain" />
+          )}
         </section>
 
         {/* Questions */}
@@ -275,7 +310,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
             )}
 
             <ol className="mt-8 space-y-8">
-              {task.questions.map((q: any, i: number) => {
+              {task.questions.map((q, i) => {
                 const isAnswered = !!answers[q.id]?.trim();
                 return (
                   <li key={q.id} className="flex gap-3">
@@ -291,10 +326,11 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
                       <p id={`label-${q.id}`} className="text-[0.9375rem] leading-relaxed">
                         {q.text}
                       </p>
+                      {q.wordLimit && <p className="mt-1 text-xs text-muted-foreground">No more than {q.wordLimit} {q.wordLimit === 1 ? 'word' : 'words'}</p>}
 
-                      {q.options ? (
+                      {optionsForQuestion(questionType, q) ? (
                         <div role="radiogroup" aria-labelledby={`label-${q.id}`} className="mt-3 space-y-2">
-                          {q.options.map((opt: string) => (
+                          {optionsForQuestion(questionType, q)!.map((opt) => (
                             <label
                               key={opt}
                               className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card px-3.5 py-3 text-sm transition-colors hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/40"
@@ -319,7 +355,7 @@ export default function ReadingAttemptClient({ task, questionType }: { task: any
                         <input
                           aria-labelledby={`label-${q.id}`}
                           className={inputClass}
-                          placeholder="Type your answer"
+                          placeholder={q.wordLimit ? `Type your answer (up to ${q.wordLimit} words)` : 'Type your answer'}
                           autoComplete="off"
                           value={answers[q.id] || ''}
                           onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}

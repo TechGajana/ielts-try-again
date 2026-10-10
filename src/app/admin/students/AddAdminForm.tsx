@@ -37,17 +37,31 @@ export default function AddAdminForm() {
 
   return (
     <form ref={formRef} action={handleAction} className="space-y-5">
-      <Field label="Email" htmlFor="admin-email" hint="Admins log in with this email directly, no OTP username lookup.">
-        <input
-          id="admin-email"
-          name="email"
-          type="email"
-          required
-          autoComplete="off"
-          placeholder="e.g. teacher@ieltstryagain.com"
-          className={inputClass}
-        />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Full name" htmlFor="admin-name">
+          <input id="admin-name" name="displayName" required autoComplete="name" className={inputClass} />
+        </Field>
+        <Field label="Phone number" htmlFor="admin-phone" hint="Optional; include country code, e.g. +14155550123.">
+          <input id="admin-phone" name="phoneNumber" type="tel" autoComplete="tel" className={inputClass} />
+        </Field>
+        <Field label="Email" htmlFor="admin-email" hint="Admins log in with this email directly, no OTP username lookup.">
+          <input
+            id="admin-email"
+            name="email"
+            type="email"
+            required
+            autoComplete="off"
+            placeholder="e.g. teacher@ieltstryagain.com"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Administrator role" htmlFor="admin-role">
+          <select id="admin-role" name="adminRole" defaultValue="SECONDARY_ADMIN" className={inputClass}>
+            <option value="SECONDARY_ADMIN">Secondary Admin</option>
+            <option value="PRIMARY_ADMIN">Primary Admin</option>
+          </select>
+        </Field>
+      </div>
 
       <Field label="Password" htmlFor="admin-password" hint="At least 8 characters. Share this with the new admin.">
         <div className="flex gap-2">

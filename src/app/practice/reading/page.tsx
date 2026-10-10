@@ -1,9 +1,11 @@
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import ReadingBrowser from './ReadingBrowser';
 
 async function getStudentId() {
-  const sessionCookie = (await cookies()).get('session')?.value!;
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) redirect('/login');
   const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
   return decoded.uid;
 }
@@ -12,7 +14,7 @@ export default async function ReadingTypesPage() {
   const studentId = await getStudentId();
 
   const [tasksSnap, attemptsSnap] = await Promise.all([
-    adminDb.collection('readingTasks').select('questionType').get(),
+    adminDb.collection('readingTasks').select('questionType', 'status').get(),
     adminDb
       .collection('attempts')
       .where('studentId', '==', studentId)
@@ -27,6 +29,7 @@ export default async function ReadingTypesPage() {
   // { 'Matching Headings': { done: 3, total: 10 }, ... }
   const progress: Record<string, { done: number; total: number }> = {};
   for (const doc of tasksSnap.docs) {
+    if (doc.get('status') === 'Draft') continue;
     const type = doc.get('questionType') as string;
     progress[type] ??= { done: 0, total: 0 };
     progress[type].total += 1;

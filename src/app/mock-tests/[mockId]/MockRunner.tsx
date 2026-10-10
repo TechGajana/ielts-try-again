@@ -15,6 +15,7 @@ import {
   type RunnerState,
 } from '@/lib/mock-config';
 import { WRITING_PARTS, countWords } from '@/lib/writing-config';
+import ReadingPassage from '@/components/practice/reading-passage';
 import { advanceMockAction, audioMockAction, leaveMockAction, saveMockAction } from './actions';
 import ConfirmDialog from './ConfirmDialog';
 import QuestionField from './QuestionField';
@@ -381,14 +382,14 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
   const saveLabel = saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Offline, retrying';
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
+    <div className="min-h-svh bg-[#f6f7f4] text-foreground">
       <audio ref={audioRef} onEnded={handleAudioEnded} preload="auto" className="hidden" />
 
       {/* ───────── Header ───────── */}
-      <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-black/[0.06] bg-white/90 shadow-[0_1px_0_rgba(18,38,31,0.02)] backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#183b30] text-white shadow-sm">
               <ClipboardCheck className="size-5" aria-hidden />
             </div>
             <p className="hidden truncate text-sm font-medium sm:block">Mock Test {state.mockNumber}</p>
@@ -401,7 +402,7 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
                 aria-current={i === sectionIndex ? 'step' : undefined}
                 className={`rounded-full px-3 py-1 ${
                   i === sectionIndex
-                    ? 'bg-primary font-medium text-primary-foreground'
+                    ? 'bg-[#183b30] font-medium text-white'
                     : i < sectionIndex
                       ? 'bg-muted text-muted-foreground line-through'
                       : 'border text-muted-foreground'
@@ -422,7 +423,7 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
             <div
               role="timer"
               aria-label="Time remaining in this section"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-sm tabular-nums ${
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-mono text-sm font-semibold tabular-nums ${
                 lowTime ? 'bg-destructive/10 text-destructive' : 'bg-muted text-foreground'
               }`}
             >
@@ -497,18 +498,25 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
           const part = payload.parts[activePart] ?? payload.parts[0];
           const starts = startNumbers(payload.parts);
           return (
-            <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
+            <div className="mx-auto grid max-w-7xl gap-px bg-black/[0.06] lg:grid-cols-2">
               <section
                 aria-label="Reading passage"
-                className="border-b px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
+                className="border-b bg-white px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:border-b-0 lg:px-10"
               >
-                <div className="mx-auto max-w-prose whitespace-pre-wrap font-serif text-[1.0625rem] leading-8">
-                  {part.passage}
+                <div className="mx-auto max-w-prose font-serif text-[1.0625rem] leading-8">
+                  <ReadingPassage passage={part.passage} format={part.passageFormat} />
                 </div>
+                {part.description && (
+                  <p className="mx-auto mt-5 max-w-prose text-sm text-muted-foreground">{part.description}</p>
+                )}
+                {part.diagramUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- signed R2 URL
+                  <img src={part.diagramUrl} alt={`${part.title} diagram`} className="mx-auto mt-6 max-h-96 max-w-full rounded-lg border object-contain" />
+                )}
               </section>
               <section
                 aria-label="Questions"
-                className="px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:px-10"
+                className="bg-[#fbfcfa] px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:px-10"
               >
                 <div className="mx-auto max-w-xl">
                   {part.instructions && (
@@ -542,10 +550,10 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
           const imageUrl = key === 'task1' ? payload.task1.imageUrl : null;
 
           return (
-            <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
+            <div className="mx-auto grid max-w-7xl gap-px bg-black/[0.06] lg:grid-cols-2">
               <section
                 aria-label="Question"
-                className="border-b px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-10"
+                className="border-b bg-white px-6 py-8 lg:h-[calc(100svh-7rem)] lg:overflow-y-auto lg:border-b-0 lg:px-10"
               >
                 <div className="mx-auto max-w-prose">
                   <p className="mb-4 text-xs text-muted-foreground">
@@ -561,19 +569,24 @@ export default function MockRunner({ mockId, initial }: { mockId: string; initia
                 </div>
               </section>
 
-              <section aria-label="Your answer" className="flex flex-col px-6 py-8 lg:h-[calc(100svh-7rem)] lg:px-10">
+              <section aria-label="Your answer" className="flex flex-col bg-[#fbfcfa] px-6 py-8 lg:h-[calc(100svh-7rem)] lg:px-10">
                 <label htmlFor="answer" className="sr-only">
                   Your answer for {key === 'task1' ? 'Task 1' : 'Task 2'}
                 </label>
                 <textarea
                   id="answer"
                   key={key}
+                  aria-describedby="mock-answer-notice"
                   value={text}
+                  onPaste={(e) => e.preventDefault()}
                   onChange={(e) => setAnswer(key, e.target.value)}
                   placeholder="Start writing your answer here…"
                   spellCheck={false}
-                  className="min-h-96 w-full flex-1 resize-none rounded-xl border border-input bg-background p-4 font-serif text-[1.0625rem] leading-8 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
+                  className="min-h-96 w-full flex-1 resize-none rounded-2xl border border-black/[0.08] bg-white p-5 font-serif text-[1.0625rem] leading-8 shadow-[0_8px_24px_rgba(25,43,35,0.04)] outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground/50 focus-visible:border-[#68877a] focus-visible:ring-[3px] focus-visible:ring-[#68877a]/20"
                 />
+                <p id="mock-answer-notice" className="mt-2 text-xs text-muted-foreground">
+                  Pasting is disabled during this timed exam. Type your answer here.
+                </p>
                 <p
                   className={`mt-3 text-xs tabular-nums ${words >= cfg.minWords ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}
                 >

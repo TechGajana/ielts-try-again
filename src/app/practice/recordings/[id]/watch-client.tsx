@@ -2,8 +2,18 @@
 
 import { BackLink } from '@/components/practice/back-link';
 import type { RecordingWithUrl } from '@/lib/recordings';
+import type { RecordingComment } from '@/lib/recording-comments';
+import CommentsSection from './CommentsSection';
 
-export default function WatchClient({ recording }: { recording: RecordingWithUrl }) {
+export default function WatchClient({
+  recording,
+  currentStudentId,
+  initialComments,
+}: {
+  recording: RecordingWithUrl;
+  currentStudentId: string;
+  initialComments: RecordingComment[];
+}) {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <div className="mx-auto max-w-4xl px-6 py-10">
@@ -20,12 +30,19 @@ export default function WatchClient({ recording }: { recording: RecordingWithUrl
         >
           <video
             src={recording.videoUrl}
+            poster={recording.thumbnailUrl ?? undefined}
             controls
             controlsList="nodownload noremoteplayback"
             disablePictureInPicture
             className="aspect-video w-full"
           />
         </div>
+
+        <CommentsSection
+          recordingId={recording.id}
+          currentStudentId={currentStudentId}
+          initialComments={initialComments}
+        />
       </div>
     </div>
   );

@@ -21,30 +21,39 @@ function timeAgo(ts: number | null) {
 export default function CommentsSection({
   recordingId,
   currentStudentId,
-  initialComments,
 }: {
   recordingId: string;
   currentStudentId: string;
-  initialComments: RecordingComment[];
 }) {
-  const [comments, setComments] = useState(initialComments);
+  const [comments, setComments] = useState<RecordingComment[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [posting, startPosting] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Light polling so a reply from a tutor shows up without a manual refresh
   useEffect(() => {
-    const id = setInterval(async () => {
+    let active = true;
+    const refreshComments = async () => {
       try {
         const fresh = await getComments(recordingId);
-        setComments(fresh);
-      } catch {
-        /* silent — next poll will retry */
+        if (active) {
+          setComments(fresh);
+          setLoadError('');
+        }
+      } catch (err) {
+        if (active) {
+          setLoadError(err instanceof Error ? err.message : 'Could not load comments');
+        }
       }
-    }, 15000);
-    return () => clearInterval(id);
+    };
+    void refreshComments();
+    const id = setInterval(() => void refreshComments(), 15000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
   }, [recordingId]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -116,6 +125,12 @@ export default function CommentsSection({
         <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
           <CircleAlert className="size-4 shrink-0" aria-hidden />
           {error}
+        </p>
+      )}
+      {loadError && (
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+          <CircleAlert className="size-4 shrink-0" aria-hidden />
+          {loadError}
         </p>
       )}
 

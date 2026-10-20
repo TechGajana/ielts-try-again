@@ -2,17 +2,14 @@
 
 import { BackLink } from '@/components/practice/back-link';
 import type { RecordingWithUrl } from '@/lib/recordings';
-import type { RecordingComment } from '@/lib/recording-comments';
 import CommentsSection from './CommentsSection';
 
 export default function WatchClient({
   recording,
   currentStudentId,
-  initialComments,
 }: {
   recording: RecordingWithUrl;
   currentStudentId: string;
-  initialComments: RecordingComment[];
 }) {
   return (
     <div className="min-h-svh bg-background text-foreground">
@@ -41,7 +38,6 @@ export default function WatchClient({
         <CommentsSection
           recordingId={recording.id}
           currentStudentId={currentStudentId}
-          initialComments={initialComments}
         />
       </div>
     </div>

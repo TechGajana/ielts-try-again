@@ -1,10 +1,12 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { listRecordingsForStudent } from '@/lib/recordings';
 import RecordingsBrowser from './RecordingsBrowser';
 
 async function getStudentId() {
-  const sessionCookie = (await cookies()).get('session')?.value!;
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) redirect('/login');
   const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
   return decoded.uid;
 }

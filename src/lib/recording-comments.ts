@@ -1,5 +1,5 @@
 import { adminDb } from './firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export type RecordingComment = {
   id: string;
@@ -13,10 +13,9 @@ export async function listComments(recordingId: string): Promise<RecordingCommen
   const snap = await adminDb
     .collection('recordingComments')
     .where('recordingId', '==', recordingId)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snap.docs.map((d) => {
+  return snap.docs.map((d: QueryDocumentSnapshot) => {
     const data = d.data();
     return {
       id: d.id,
@@ -25,7 +24,7 @@ export async function listComments(recordingId: string): Promise<RecordingCommen
       text: data.text as string,
       createdAt: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : null,
     };
-  });
+  }).sort((a: RecordingComment, b: RecordingComment) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
 export async function addComment(input: {

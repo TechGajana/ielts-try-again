@@ -8,10 +8,15 @@ import { addComment, deleteComment, listComments } from '@/lib/recording-comment
 async function getStudent() {
   const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) redirect('/login');
-  const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-  const studentDoc = await adminDb.collection('students').doc(decoded.uid).get();
+  let studentId: string;
+  try {
+    studentId = (await adminAuth.verifySessionCookie(sessionCookie, true)).uid;
+  } catch {
+    redirect('/login');
+  }
+  const studentDoc = await adminDb.collection('students').doc(studentId).get();
   const name = (studentDoc.get('username') as string) ?? 'Student';
-  return { uid: decoded.uid, name };
+  return { uid: studentId, name };
 }
 
 export async function getComments(recordingId: string) {

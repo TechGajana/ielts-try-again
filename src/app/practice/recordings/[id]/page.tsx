@@ -7,9 +7,14 @@ import WatchClient from './watch-client';
 async function getStudent() {
   const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) redirect('/login');
-  const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-  const studentDoc = await adminDb.collection('students').doc(decoded.uid).get();
-  return { uid: decoded.uid, allowedCourseIds: (studentDoc.get('allowedCourseIds') as string[] | undefined) ?? [] };
+  let studentId: string;
+  try {
+    studentId = (await adminAuth.verifySessionCookie(sessionCookie, true)).uid;
+  } catch {
+    redirect('/login');
+  }
+  const studentDoc = await adminDb.collection('students').doc(studentId).get();
+  return { uid: studentId, allowedCourseIds: (studentDoc.get('allowedCourseIds') as string[] | undefined) ?? [] };
 }
 
 export default async function WatchRecordingPage({ params }: { params: Promise<{ id: string }> }) {

@@ -70,6 +70,9 @@ export async function submitAttempt(attemptId: string, taskId: string, answers: 
     submissionTime: new Date().toISOString(),
     studentAnswers: answers,
     correctAnswers,
+    acceptedAnswers,
+    explanations,
+    total: Object.keys(correctAnswers).length,
     score,
   });
 

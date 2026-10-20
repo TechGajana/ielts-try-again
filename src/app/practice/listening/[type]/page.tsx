@@ -1,7 +1,12 @@
+import { redirect } from 'next/navigation';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
+import { getAttemptCounts } from '@/lib/attempts';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { ArrowUpRight, Lock } from 'lucide-react';
+import { PracticeShell } from '@/components/practice/practice-shell';
+
+const MAX_ATTEMPTS = 3;
 
 async function getStudentId() {
   const sessionCookie = (await cookies()).get('session')?.value;
@@ -31,42 +36,113 @@ export default async function ListeningTaskListPage({
       id: doc.id,
       taskNumber: Number(doc.get('taskNumber')) || 1,
       title: typeof doc.get('title') === 'string' ? doc.get('title') as string : '',
+      difficulty: doc.get('difficulty'),
+      description: doc.get('description'),
     }));
-
-  const attemptsSnap = await adminDb
-    .collection('attempts')
-    .where('studentId', '==', studentId)
-    .where('questionType', '==', questionType)
-    .where('module', '==', 'listening')
-    .get();
-
-  const attemptCounts: Record<string, number> = {};
-  attemptsSnap.docs.forEach((doc) => {
-    const { taskId } = doc.data();
-    attemptCounts[taskId] = (attemptCounts[taskId] || 0) + 1;
-  });
+  const attemptCounts = await getAttemptCounts(studentId, 'listening', questionType);
 
   return (
-    <div className="p-8">
-      <h1 className="text-xl font-semibold mb-6">{questionType}</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tasks.map((task) => {
-          const used = attemptCounts[task.id] || 0;
-          const locked = used >= 3;
-          return (
-            <Link
-              key={task.id}
-              href={locked ? '#' : `/practice/listening/${type}/${task.id}`}
-              className={`border rounded-lg p-6 ${
-                locked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'
-              }`}
-            >
-              <h3 className="font-medium">{task.title || `Task ${task.taskNumber}`}</h3>
-              <p className="text-sm text-gray-500">{used}/3 attempts used</p>
-            </Link>
-          );
-        })}
+    <PracticeShell
+      crumbs={[{ label: 'Listening', href: '/practice/listening' }, { label: questionType }]}
+    >
+      <div className="max-w-2xl">
+        <h1 className="font-serif text-3xl tracking-tight text-balance sm:text-4xl">{questionType}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Each task is timed. You get {MAX_ATTEMPTS} attempts per task.
+        </p>
       </div>
-    </div>
+
+      {tasks.length === 0 ? (
+        <div className="mt-10 rounded-xl border border-dashed bg-muted/40 p-10 text-center">
+          <p className="font-medium">No tasks here yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            There are no tasks for this question type. Try another one for now.
+          </p>
+          <Link
+            href="/practice/listening"
+            className="mt-5 inline-flex h-10 items-center rounded-lg border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+          >
+            Back to question types
+          </Link>
+        </div>
+      ) : (
+        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {tasks.map((task) => {
+            const used = attemptCounts[task.id] || 0;
+            const locked = used >= MAX_ATTEMPTS;
+            const status = locked
+              ? 'No attempts left'
+              : used === 0
+                ? 'Not started'
+                : `${used} of ${MAX_ATTEMPTS} attempts used`;
+
+            const meter = (
+              <div className="flex gap-1.5" aria-hidden>
+                {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 flex-1 rounded-full ${
+                      i < used ? (locked ? 'bg-muted-foreground/50' : 'bg-primary') : 'bg-border'
+                    }`}
+                  />
+                ))}
+              </div>
+            );
+
+            if (locked) {
+              return (
+                <li key={task.id}>
+                  <div
+                    aria-disabled="true"
+                    className="flex h-full min-h-36 flex-col justify-between gap-6 rounded-xl border border-dashed bg-muted/40 p-5 text-muted-foreground"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-serif text-2xl tracking-tight">{task.title || `Task ${task.taskNumber}`}</h3>
+                        {task.title && <p className="mt-1 text-sm text-muted-foreground">Task {task.taskNumber}</p>}
+                      </div>
+                      <Lock className="size-5" aria-hidden />
+                    </div>
+                    <div className="space-y-2">
+                      {meter}
+                      <p className="text-sm">{status}</p>
+                    </div>
+                  </div>
+                </li>
+              );
+            }
+
+            return (
+              <li key={task.id}>
+                <Link
+                  href={`/practice/listening/${type}/${task.id}`}
+                  className="group flex h-full min-h-36 flex-col justify-between gap-6 rounded-xl border bg-card p-5 text-card-foreground transition-[transform,box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-serif text-2xl tracking-tight">{task.title || `Task ${task.taskNumber}`}</h3>
+                    <ArrowUpRight
+                      className="size-5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                      aria-hidden
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {meter}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-muted-foreground">{status}</p>
+                      {typeof task.difficulty === 'string' && (
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{task.difficulty}</span>
+                      )}
+                    </div>
+                    {typeof task.description === 'string' && (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </PracticeShell>
   );
 }

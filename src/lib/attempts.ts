@@ -1,4 +1,5 @@
 import { adminDb } from './firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 interface StartAttemptParams {
   studentId: string;
@@ -13,6 +14,91 @@ interface StartAttemptResult {
   attemptId: string;
   startTime: string;
   attemptNumber: number;
+}
+
+export interface AutoScoredAttemptResult {
+  id: string;
+  attemptNumber: number;
+  score: number;
+  total: number;
+  answers: Record<string, string>;
+  correctAnswers: Record<string, string>;
+  acceptedAnswers: Record<string, string[]>;
+  explanations: Record<string, string>;
+}
+
+function stringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+  );
+}
+
+function stringArrayMap(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter((entry): entry is [string, unknown[]] => Array.isArray(entry[1]))
+      .map(([key, values]) => [key, values.filter((item): item is string => typeof item === 'string')]),
+  );
+}
+
+export async function listAutoScoredResults(
+  studentId: string,
+  module: 'reading' | 'listening',
+  taskId: string,
+  questionFeedback: { id: string; alternativeAnswers?: string[]; explanation?: string }[] = [],
+): Promise<AutoScoredAttemptResult[]> {
+  const snap = await adminDb
+    .collection('attempts')
+    .where('studentId', '==', studentId)
+    .where('module', '==', module)
+    .where('taskId', '==', taskId)
+    .get();
+
+  const docs: QueryDocumentSnapshot[] = snap.docs;
+  const feedbackByQuestion = new Map(questionFeedback.map((question) => [question.id, question]));
+  return docs
+    .filter(
+      (doc) =>
+        doc.get('status') === 'completed' &&
+        typeof doc.get('score') === 'number' &&
+        Object.keys(stringMap(doc.get('correctAnswers'))).length > 0,
+    )
+    .map((doc) => {
+      const data = doc.data();
+      const correctAnswers = stringMap(data.correctAnswers);
+      const alternatives = stringArrayMap(data.alternativeAnswers);
+      const storedAccepted = stringArrayMap(data.acceptedAnswers);
+      const acceptedAnswers = Object.fromEntries(
+        Object.entries(correctAnswers).map(([id, answer]) => [
+          id,
+          storedAccepted[id] ?? [
+            answer,
+            ...(alternatives[id] ?? feedbackByQuestion.get(id)?.alternativeAnswers ?? []),
+          ],
+        ]),
+      );
+
+      return {
+        id: doc.id,
+        attemptNumber: Number(data.attemptNumber) || 1,
+        score: data.score as number,
+        total: Object.keys(correctAnswers).length,
+        answers: stringMap(data.studentAnswers),
+        correctAnswers,
+        acceptedAnswers,
+        explanations: Object.fromEntries([
+          ...questionFeedback.flatMap((question) =>
+            typeof question.explanation === 'string' && question.explanation
+              ? [[question.id, question.explanation] as const]
+              : [],
+          ),
+          ...Object.entries(stringMap(data.explanations)),
+        ]),
+      };
+    })
+    .sort((a, b) => a.attemptNumber - b.attemptNumber);
 }
 
 /**
@@ -95,7 +181,8 @@ export async function submitAutoScoredAttempt(
   studentAnswers: Record<string, string>,
   alternativeAnswers: Record<string, string[]> = {},
   multipleAnswerIds: string[] = [],
-  wordLimits: Record<string, number> = {}
+  wordLimits: Record<string, number> = {},
+  explanations: Record<string, string> = {},
 ) {
   let score = 0;
   const total = Object.keys(correctAnswers).length;
@@ -145,6 +232,9 @@ export async function submitAutoScoredAttempt(
     submissionTime: new Date().toISOString(),
     studentAnswers,
     correctAnswers,
+    alternativeAnswers,
+    explanations,
+    total,
     score,
   });
 

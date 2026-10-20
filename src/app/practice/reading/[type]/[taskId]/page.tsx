@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { getPlaybackUrl } from '@/lib/r2-presign';
+import { listAutoScoredResults } from '@/lib/attempts';
 import type { ReadingQuestion, ReadingTaskView } from '@/lib/reading-content';
 import ReadingAttemptClient from './ReadingAttemptClient';
 
@@ -13,12 +14,13 @@ export default async function ReadingAttemptPage({
   const { type, taskId } = await params;
   const session = (await cookies()).get('session')?.value;
   if (!session) redirect('/login');
-  await adminAuth.verifySessionCookie(session, true);
+  const decoded = await adminAuth.verifySessionCookie(session, true);
 
   const taskDoc = await adminDb.collection('readingTasks').doc(taskId).get();
   if (!taskDoc.exists || taskDoc.get('status') === 'Draft') notFound();
   const data = taskDoc.data()!;
   const questions: ReadingQuestion[] = Array.isArray(data.questions) ? data.questions : [];
+  const initialAttempts = await listAutoScoredResults(decoded.uid, 'reading', taskId, questions);
   const task: ReadingTaskView = {
     id: taskDoc.id,
     questionType: data.questionType,
@@ -37,5 +39,12 @@ export default async function ReadingAttemptPage({
   if (typeof data.diagramKey === 'string') task.diagramKey = data.diagramKey;
   const diagramUrl = task.diagramKey ? await getPlaybackUrl(task.diagramKey) : null;
 
-  return <ReadingAttemptClient task={task} diagramUrl={diagramUrl} questionType={decodeURIComponent(type)} />;
+  return (
+    <ReadingAttemptClient
+      task={task}
+      diagramUrl={diagramUrl}
+      questionType={decodeURIComponent(type)}
+      initialAttempts={initialAttempts}
+    />
+  );
 }

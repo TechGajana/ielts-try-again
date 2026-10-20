@@ -21,7 +21,7 @@ export async function startAttempt(taskId: string, questionType: string) {
   if (data.questionType !== questionType) throw new Error('This Listening practice set does not match the selected question type.');
   const timerMinutes = Number(data.timerMinutes) || 8;
 
-  const { attemptId, startTime } = await startAttemptShared({
+  const { attemptId, startTime, attemptNumber } = await startAttemptShared({
     studentId,
     module: 'listening',
     taskId,
@@ -39,7 +39,7 @@ export async function startAttempt(taskId: string, questionType: string) {
       : '';
   if (!audioUrl) throw new Error('This Listening practice set has no playable audio.');
 
-  return { attemptId, startTime, audioUrl };
+  return { attemptId, startTime, attemptNumber, audioUrl };
 }
 
 export async function submitAttempt(attemptId: string, taskId: string, answers: Record<string, string>) {
@@ -88,6 +88,14 @@ export async function submitAttempt(attemptId: string, taskId: string, answers: 
       Number.isInteger(question.wordLimit) && Number(question.wordLimit) > 0)
       .map((question) => [question.id, question.wordLimit]),
   );
-  const result = await submitAutoScoredAttempt(attemptId, correctAnswers, answers, alternatives, multipleAnswerIds, wordLimits);
+  const result = await submitAutoScoredAttempt(
+    attemptId,
+    correctAnswers,
+    answers,
+    alternatives,
+    multipleAnswerIds,
+    wordLimits,
+    explanations,
+  );
   return { ...result, explanations };
 }

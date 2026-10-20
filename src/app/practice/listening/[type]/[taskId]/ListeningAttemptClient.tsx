@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   CircleCheck,
   CircleX,
@@ -13,7 +12,10 @@ import {
 } from 'lucide-react';
 import { BackLink } from '@/components/practice/back-link';
 import type { ListeningQuestion } from '@/lib/listening-content';
+import type { AutoScoredAttemptResult } from '@/lib/attempts';
 import { startAttempt, submitAttempt } from './actions';
+
+const MAX_ATTEMPTS = 3;
 
 const primaryButton =
   'inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-70';
@@ -95,37 +97,140 @@ function TopBar({ questionType, title, children }: { questionType: string; title
   );
 }
 
-export default function ListeningAttemptClient({ task, questionType }: { task: AttemptTask; questionType: string }) {
+function ListeningResultFeedback({
+  task,
+  result,
+}: {
+  task: AttemptTask;
+  result: AutoScoredAttemptResult;
+}) {
+  const percent = result.total ? Math.round((result.score / result.total) * 100) : 0;
+
+  return (
+    <>
+      <section className="relative overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-primary-foreground/10 blur-3xl"
+        />
+        <div className="relative">
+          <h2 className="font-serif text-3xl leading-tight tracking-tight text-balance sm:text-4xl">
+            You scored {result.score} out of {result.total}
+          </h2>
+          <div
+            className="mt-6 h-1.5 overflow-hidden rounded-full bg-primary-foreground/20"
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Score"
+          >
+            <div className="h-full rounded-full bg-primary-foreground" style={{ width: `${percent}%` }} />
+          </div>
+          <p className="mt-3 text-sm text-primary-foreground/70">{percent}% correct</p>
+        </div>
+      </section>
+
+      <section className="mt-10" aria-label={`Attempt ${result.attemptNumber} answer review`}>
+        <h2 className="font-serif text-2xl tracking-tight">Review your answers</h2>
+        <ol className="mt-5 space-y-3">
+          {task.questions.map((question, index) => {
+            const accepted = result.acceptedAnswers[question.id] ?? [result.correctAnswers[question.id] ?? ''];
+            const answer = result.answers[question.id] ?? '';
+            const isCorrect = accepted.map(normalizeAnswer).includes(normalizeAnswer(answer));
+
+            return (
+              <li key={question.id} className="rounded-xl border bg-card p-5 text-card-foreground">
+                <div className="flex gap-3">
+                  {isCorrect ? (
+                    <CircleCheck className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Correct" />
+                  ) : (
+                    <CircleX className="mt-0.5 size-5 shrink-0 text-destructive" aria-label="Incorrect" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-relaxed">
+                      <span className="tabular-nums text-muted-foreground">{index + 1}. </span>
+                      {question.text}
+                    </p>
+                    <dl className="mt-3 space-y-1.5 text-sm">
+                      <div className="flex gap-2">
+                        <dt className="w-28 shrink-0 text-muted-foreground">Your answer</dt>
+                        <dd className={isCorrect ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'}>
+                          {answer ? answerForDisplay(answer) : '(no answer)'}
+                        </dd>
+                      </div>
+                      {!isCorrect && (
+                        <div className="flex gap-2">
+                          <dt className="w-28 shrink-0 text-muted-foreground">Correct answer</dt>
+                          <dd className="font-medium">{answerForDisplay(result.correctAnswers[question.id] ?? '')}</dd>
+                        </div>
+                      )}
+                      {result.explanations[question.id] && (
+                        <div className="flex gap-2">
+                          <dt className="w-28 shrink-0 text-muted-foreground">Explanation</dt>
+                          <dd>{result.explanations[question.id]}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    </>
+  );
+}
+
+export default function ListeningAttemptClient({
+  task,
+  questionType,
+  initialAttempts,
+}: {
+  task: AttemptTask;
+  questionType: string;
+  initialAttempts: AutoScoredAttemptResult[];
+}) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptNumber, setAttemptNumber] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState<{
-    score: number;
-    total: number;
-    correctAnswers: Record<string, string>;
-    alternativeAnswers: Record<string, string[]>;
-    explanations: Record<string, string>;
-  } | null>(null);
+  const [attempts, setAttempts] = useState(initialAttempts);
+  const [submitted, setSubmitted] = useState<AutoScoredAttemptResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState('');
   const [lockedByTabSwitch, setLockedByTabSwitch] = useState(false);
   const [audioPhase, setAudioPhase] = useState<AudioPhase>('loading');
   const [transferSecondsLeft, setTransferSecondsLeft] = useState(TRANSFER_SECONDS);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const inFlight = useRef(false);
-  const router = useRouter();
 
-  useEffect(() => {
-    startAttempt(task.id, questionType).then(({ attemptId, startTime, audioUrl }) => {
-      setAttemptId(attemptId);
-      setAudioUrl(audioUrl);
-      const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
+  async function handleStart() {
+    setStarting(true);
+    setError('');
+    try {
+      const started = await startAttempt(task.id, questionType);
+      setAttemptId(started.attemptId);
+      setAttemptNumber(started.attemptNumber);
+      setAudioUrl(started.audioUrl);
+      setAnswers({});
+      setSubmitted(null);
+      setLockedByTabSwitch(false);
+      setTransferSecondsLeft(TRANSFER_SECONDS);
+      const elapsed = (Date.now() - new Date(started.startTime).getTime()) / 1000;
       const remaining = Math.max(0, (task.timerMinutes ?? 8) * 60 - elapsed);
       setSecondsLeft(Math.floor(remaining));
       setAudioPhase('ready');
-    });
-  }, [task.id, task.timerMinutes, questionType]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start this Listening task.');
+    } finally {
+      setStarting(false);
+    }
+  }
 
   const handleSubmit = useCallback(async () => {
     if (!attemptId || submitted || inFlight.current) return;
@@ -133,19 +238,40 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
     setSubmitting(true);
     try {
       const result = await submitAttempt(attemptId, task.id, answers);
-      setSubmitted(result);
+      const completed: AutoScoredAttemptResult = {
+        id: attemptId,
+        attemptNumber: attemptNumber ?? attempts.length + 1,
+        score: result.score,
+        total: result.total,
+        answers,
+        correctAnswers: result.correctAnswers,
+        acceptedAnswers: Object.fromEntries(
+          Object.entries(result.correctAnswers).map(([id, answer]) => [
+            id,
+            [answer, ...(result.alternativeAnswers[id] ?? [])],
+          ]),
+        ),
+        explanations: result.explanations,
+      };
+      setSubmitted(completed);
+      setAttempts((previous) =>
+        [...previous.filter((attempt) => attempt.id !== completed.id), completed]
+          .sort((a, b) => a.attemptNumber - b.attemptNumber),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not submit your Listening answers.');
     } finally {
       inFlight.current = false;
       setSubmitting(false);
     }
-  }, [attemptId, answers, task.id, submitted]);
+  }, [attemptId, answers, attemptNumber, attempts.length, task.id, submitted]);
 
   // Overall attempt timer (covers listening + transfer time), same behavior as Reading
   useEffect(() => {
     if (secondsLeft === null || submitted) return;
     if (secondsLeft <= 0) {
-      handleSubmit();
-      return;
+      const timer = setTimeout(handleSubmit, 0);
+      return () => clearTimeout(timer);
     }
     const timer = setTimeout(() => setSecondsLeft((s) => (s ?? 1) - 1), 1000);
     return () => clearTimeout(timer);
@@ -155,8 +281,8 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
   useEffect(() => {
     if (audioPhase !== 'transfer' || submitted) return;
     if (transferSecondsLeft <= 0) {
-      handleSubmit();
-      return;
+      const timer = setTimeout(handleSubmit, 0);
+      return () => clearTimeout(timer);
     }
     const timer = setTimeout(() => setTransferSecondsLeft((s) => s - 1), 1000);
     return () => clearTimeout(timer);
@@ -187,50 +313,73 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
     setAudioPhase('transfer');
   }
 
-  /* ───────── Loading ───────── */
-  if (secondsLeft === null || !audioUrl) {
+  /* ───────── Intro and attempt history ───────── */
+  if (secondsLeft === null) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-background text-muted-foreground">
-        <LoaderCircle className="size-6 animate-spin motion-reduce:animate-none" aria-hidden />
-        <p className="text-sm">Preparing your audio…</p>
+      <div className="min-h-svh bg-background text-foreground">
+        <TopBar questionType={`${questionType} · ${task.section}`} title={task.title || `Task ${task.taskNumber}`} />
+        <main className="mx-auto max-w-3xl px-6 py-10">
+          <BackLink href="/practice/listening" label="Listening" />
+          <section className="mt-6 rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {attempts.length < MAX_ATTEMPTS
+                ? `Attempt ${attempts.length + 1} of ${MAX_ATTEMPTS}`
+                : 'No attempts left'}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              You have {Number(task.timerMinutes) || 8} minutes to listen and answer {task.questions.length} questions.
+              The recording plays once, followed by up to two minutes to check your answers.
+            </p>
+            {task.instructions && <p className="mt-3 text-sm">{task.instructions}</p>}
+            {attempts.length > 0 && attempts.length < MAX_ATTEMPTS && (
+              <p className="mt-3 text-sm text-muted-foreground">Use your previous feedback to improve this attempt.</p>
+            )}
+            {error && (
+              <p role="alert" className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            {attempts.length < MAX_ATTEMPTS && (
+              <button onClick={handleStart} disabled={starting} className={`${primaryButton} mt-5 h-11 px-6`}>
+                {starting && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />}
+                Start attempt
+              </button>
+            )}
+          </section>
+
+          {attempts.length > 0 && (
+            <section className="mt-10" aria-labelledby="history-heading">
+              <h2 id="history-heading" className="text-lg font-semibold tracking-tight">Your attempts</h2>
+              <div className="mt-4 space-y-3">
+                {[...attempts].reverse().map((attempt) => (
+                  <details key={attempt.id} className="rounded-xl border bg-card p-5 text-card-foreground">
+                    <summary className="cursor-pointer text-sm font-medium">
+                      Attempt {attempt.attemptNumber} feedback · {attempt.score} / {attempt.total}
+                    </summary>
+                    <div className="mt-5">
+                      <ListeningResultFeedback task={task} result={attempt} />
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
       </div>
     );
   }
 
   /* ───────── Results ───────── */
   if (submitted) {
-    const percent = submitted.total ? Math.round((submitted.score / submitted.total) * 100) : 0;
-
     return (
       <div className="min-h-svh bg-background text-foreground">
-        <TopBar questionType={`${questionType} · ${task.section}`} title={`${task.title || `Task ${task.taskNumber}`} results`} />
+        <TopBar questionType={`${questionType} · ${task.section}`} title={`Attempt ${submitted.attemptNumber} feedback`} />
 
         <main className="mx-auto max-w-3xl px-6 py-10">
           <BackLink href="/practice/listening" label="Listening" />
-
-          <section className="relative mt-6 overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-primary-foreground/10 blur-3xl"
-            />
-            <div className="relative">
-              <h2 className="font-serif text-3xl leading-tight tracking-tight text-balance sm:text-4xl">
-                You scored {submitted.score} out of {submitted.total}
-              </h2>
-              <div
-                className="mt-6 h-1.5 overflow-hidden rounded-full bg-primary-foreground/20"
-                role="progressbar"
-                aria-valuenow={percent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Score"
-              >
-                <div className="h-full rounded-full bg-primary-foreground" style={{ width: `${percent}%` }} />
-              </div>
-              <p className="mt-3 text-sm text-primary-foreground/70">{percent}% correct</p>
-            </div>
-          </section>
-
+          <div className="mt-6">
+            <ListeningResultFeedback task={task} result={submitted} />
+          </div>
           {lockedByTabSwitch && (
             <div
               role="alert"
@@ -240,61 +389,18 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
             </div>
           )}
 
-          <section className="mt-10" aria-labelledby="review-heading">
-            <h2 id="review-heading" className="font-serif text-2xl tracking-tight">
-              Review your answers
-            </h2>
-
-            <ol className="mt-5 space-y-3">
-              {task.questions.map((q, i) => {
-                const accepted = [submitted.correctAnswers[q.id], ...(submitted.alternativeAnswers[q.id] ?? [])]
-                  .filter(Boolean)
-                  .map(normalizeAnswer);
-                const isCorrect = accepted.includes(normalizeAnswer(answers[q.id] ?? ''));
-                return (
-                  <li key={q.id} className="rounded-xl border bg-card p-5 text-card-foreground">
-                    <div className="flex gap-3">
-                      {isCorrect ? (
-                        <CircleCheck className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Correct" />
-                      ) : (
-                        <CircleX className="mt-0.5 size-5 shrink-0 text-destructive" aria-label="Incorrect" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium leading-relaxed">
-                          <span className="tabular-nums text-muted-foreground">{i + 1}. </span>
-                          {q.text}
-                        </p>
-                        <dl className="mt-3 space-y-1.5 text-sm">
-                          <div className="flex gap-2">
-                            <dt className="w-28 shrink-0 text-muted-foreground">Your answer</dt>
-                            <dd className={isCorrect ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'}>
-                              {answers[q.id] || '(no answer)'}
-                            </dd>
-                          </div>
-                          {!isCorrect && (
-                            <div className="flex gap-2">
-                              <dt className="w-28 shrink-0 text-muted-foreground">Correct answer</dt>
-                              <dd className="font-medium">{answerForDisplay(submitted.correctAnswers[q.id])}</dd>
-                            </div>
-                          )}
-                          {submitted.explanations[q.id] && (
-                            <div className="mt-2 border-t pt-2">
-                              <dt className="text-muted-foreground">Explanation</dt>
-                              <dd>{submitted.explanations[q.id]}</dd>
-                            </div>
-                          )}
-                        </dl>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button onClick={() => router.push('/practice/listening')} className={`${primaryButton} h-11 px-5`}>
-              Back to Listening
+            <button
+              onClick={() => {
+                setSubmitted(null);
+                setAttemptId(null);
+                setAudioUrl(null);
+                setSecondsLeft(null);
+                setAudioPhase('loading');
+              }}
+              className={`${primaryButton} h-11 px-5`}
+            >
+              {attempts.length < MAX_ATTEMPTS ? `Try again (${MAX_ATTEMPTS - attempts.length} left)` : 'Compare my attempts'}
             </button>
             <Link
               href={`/practice/listening/${encodeURIComponent(questionType)}`}
@@ -304,6 +410,15 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
             </Link>
           </div>
         </main>
+      </div>
+    );
+  }
+
+  if (!audioUrl) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-background text-muted-foreground">
+        <LoaderCircle className="size-6 animate-spin motion-reduce:animate-none" aria-hidden />
+        <p className="text-sm">Preparing your audio…</p>
       </div>
     );
   }
@@ -346,6 +461,11 @@ export default function ListeningAttemptClient({ task, questionType }: { task: A
       >
         Stay on this tab. Switching away will submit your answers immediately and use one attempt.
       </div>
+      {error && (
+        <p role="alert" className="border-b border-destructive/20 bg-destructive/10 px-4 py-2.5 text-center text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <main className="mx-auto max-w-3xl px-6 py-8">
         {/* Audio control */}

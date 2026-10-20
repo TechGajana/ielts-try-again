@@ -27,20 +27,43 @@ export default function RecordingsBrowser({ recordings }: { recordings: Recordin
             </p>
           </div>
         ) : (
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {recordings.map((r) => (
               <li key={r.id}>
                 <Link
                   href={`/practice/recordings/${r.id}`}
-                  className="group flex h-full flex-col justify-between gap-6 rounded-xl border bg-card p-5 text-card-foreground transition-[transform,box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:hover:-translate-y-0.5"
+                  className="group block overflow-hidden rounded-xl border bg-card text-card-foreground transition-[transform,box-shadow,border-color] hover:border-foreground/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:hover:-translate-y-0.5"
                 >
-                  <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Play className="size-5 fill-current" aria-hidden />
+                  {/* Thumbnail */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                    {r.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- signed R2 URL, not a static asset
+                      <img
+                        src={r.thumbnailUrl}
+                        alt=""
+                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center bg-gradient-to-br from-primary/10 to-muted">
+                        <Video className="size-8 text-muted-foreground" aria-hidden />
+                      </div>
+                    )}
+
+                    {/* Play overlay */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                      <span className="flex size-11 items-center justify-center rounded-full bg-white/90 text-primary opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <Play className="ml-0.5 size-5 fill-current" aria-hidden />
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base font-medium leading-snug tracking-tight">{r.title}</h2>
+
+                  {/* Text */}
+                  <div className="p-4">
+                    <h2 className="line-clamp-2 text-sm font-medium leading-snug tracking-tight">{r.title}</h2>
                     {r.description && (
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{r.description}</p>
+                      <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                        {r.description}
+                      </p>
                     )}
                   </div>
                 </Link>

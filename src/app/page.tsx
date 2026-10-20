@@ -1,4 +1,5 @@
 import { Fraunces, IBM_Plex_Sans } from 'next/font/google';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle2, Mic, Headphones, BookOpen, PenLine, ClipboardCheck } from 'lucide-react';
 import MobileNav from '@/components/marketing/mobile-nav';
@@ -111,14 +112,21 @@ const FAQS = [
 export default function LandingPage() {
   return (
     <div
-      className={`${fraunces.variable} ${plexSans.variable} min-h-svh bg-[#F7F4EC] text-[#1C2B39]`}
+      className={`${fraunces.variable} ${plexSans.variable} min-h-svh bg-[#F7F4EC] text-[#0B1E2D]`}
       style={{ fontFamily: 'var(--font-body)' }}
     >
       {/* ───────── Header ───────── */}
-      <header className="sticky top-0 z-30 border-b border-[#DCD4C0] bg-[#F7F4EC]/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="text-[1.0625rem] font-medium tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-            IELTS Try Again
+      <header className="sticky top-0 z-30 border-b border-[#DCD4C0] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
+          <Link href="/" className="flex items-center" aria-label="Try Again - Yours IELTS Partner Home">
+            <Image
+              src="/try-again-logo.png"
+              alt="Try Again — Yours IELTS partner"
+              width={190}
+              height={62}
+              priority
+              className="h-11 w-auto object-contain sm:h-12"
+            />
           </Link>
 
           <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">
@@ -126,7 +134,7 @@ export default function LandingPage() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-sm text-[#4B5B6B] transition-colors hover:text-[#1C2B39]"
+                className="text-sm font-medium text-[#4B5B6B] transition-colors hover:text-[#E10A23]"
               >
                 {l.label}
               </a>
@@ -134,12 +142,12 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden items-center gap-5 md:flex">
-            <Link href="/login" className="text-sm text-[#4B5B6B] transition-colors hover:text-[#1C2B39]">
+            <Link href="/login" className="text-sm font-medium text-[#4B5B6B] transition-colors hover:text-[#0B1E2D]">
               Log in
             </Link>
             <a
               href="#pricing"
-              className="inline-flex h-10 items-center rounded-sm bg-[#1C2B39] px-4 text-sm font-medium text-[#F7F4EC] transition-colors hover:bg-[#1C2B39]/90"
+              className="inline-flex h-10 items-center rounded-sm bg-[#E10A23] px-4 text-sm font-medium text-white transition-colors hover:bg-[#c4081e]"
             >
               Get started
             </a>
@@ -159,7 +167,7 @@ export default function LandingPage() {
             >
               Keep attempting.
               <br />
-              Watch the band move.
+              <span className="text-[#E10A23]">Watch the band move.</span>
             </h1>
             <p className="mt-6 max-w-md text-base leading-relaxed text-[#4B5B6B] sm:text-lg">
               Work through real exam-style Listening, Reading, Writing and Speaking tasks. Every attempt gets an
@@ -169,13 +177,13 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <a
                 href="#pricing"
-                className="inline-flex h-12 items-center rounded-sm bg-[#1C2B39] px-6 text-sm font-medium text-[#F7F4EC] transition-colors hover:bg-[#1C2B39]/90"
+                className="inline-flex h-12 items-center rounded-sm bg-[#0B1E2D] px-6 text-sm font-medium text-[#F7F4EC] transition-colors hover:bg-[#0B1E2D]/90"
               >
                 See plans
               </a>
               <Link
                 href="/login"
-                className="inline-flex h-12 items-center rounded-sm border border-[#1C2B39]/20 px-6 text-sm font-medium transition-colors hover:border-[#1C2B39]/40"
+                className="inline-flex h-12 items-center rounded-sm border border-[#0B1E2D]/20 px-6 text-sm font-medium transition-colors hover:border-[#0B1E2D]/40"
               >
                 Already have an account?
               </Link>
@@ -241,7 +249,7 @@ export default function LandingPage() {
             {STEPS.map((step) => (
               <li key={step.n}>
                 <span
-                  className="flex size-10 items-center justify-center rounded-full border border-[#1C2B39] text-base"
+                  className="flex size-10 items-center justify-center rounded-full border border-[#E10A23] text-base font-medium text-[#E10A23]"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
                   {step.n}
@@ -280,7 +288,7 @@ export default function LandingPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3 sm:w-48 sm:shrink-0">
-                    <Icon className="size-4 text-[#4B5B6B]" aria-hidden />
+                    <Icon className="size-4 text-[#E10A23]" aria-hidden />
                     <span className="font-medium">{row.name}</span>
                   </div>
                   <span className="text-sm text-[#4B5B6B] sm:w-36">{row.time}</span>
@@ -311,7 +319,7 @@ export default function LandingPage() {
               <div
                 key={plan.name}
                 className={`relative rounded-sm border p-8 ${
-                  plan.featured ? 'border-[#1C2B39] bg-[#F7F4EC]' : 'border-[#DCD4C0] bg-[#F7F4EC]/60'
+                  plan.featured ? 'border-[#0B1E2D] bg-[#F7F4EC]' : 'border-[#DCD4C0] bg-[#F7F4EC]/60'
                 }`}
               >
                 {/* perforated edge */}
@@ -333,7 +341,7 @@ export default function LandingPage() {
                 <ul className="mt-6 space-y-3">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm leading-relaxed">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#BD3B3B]" aria-hidden />
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#E10A23]" aria-hidden />
                       {f}
                     </li>
                   ))}
@@ -343,8 +351,8 @@ export default function LandingPage() {
                   href="/login"
                   className={`mt-8 inline-flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium transition-colors ${
                     plan.featured
-                      ? 'bg-[#1C2B39] text-[#F7F4EC] hover:bg-[#1C2B39]/90'
-                      : 'border border-[#1C2B39]/20 hover:border-[#1C2B39]/40'
+                      ? 'bg-[#E10A23] text-white hover:bg-[#c4081e]'
+                      : 'border border-[#0B1E2D]/20 hover:border-[#0B1E2D]/40'
                   }`}
                 >
                   Choose {plan.name}
@@ -375,7 +383,7 @@ export default function LandingPage() {
       </section>
 
       {/* ───────── Closing CTA ───────── */}
-      <section className="border-t border-[#DCD4C0] bg-[#1C2B39] text-[#F7F4EC]">
+      <section className="border-t border-[#DCD4C0] bg-[#0B1E2D] text-[#F7F4EC]">
         <div className="mx-auto max-w-6xl px-6 py-20 text-center">
           <h2
             className="mx-auto max-w-lg text-3xl leading-tight tracking-tight text-balance sm:text-4xl"
@@ -385,7 +393,7 @@ export default function LandingPage() {
           </h2>
           <a
             href="#pricing"
-            className="mt-8 inline-flex h-12 items-center rounded-sm bg-[#F7F4EC] px-6 text-sm font-medium text-[#1C2B39] transition-colors hover:bg-[#F7F4EC]/90"
+            className="mt-8 inline-flex h-12 items-center rounded-sm bg-[#E10A23] px-6 text-sm font-medium text-white transition-colors hover:bg-[#c4081e]"
           >
             See plans
           </a>
@@ -393,13 +401,19 @@ export default function LandingPage() {
       </section>
 
       {/* ───────── Footer ───────── */}
-      <footer className="border-t border-[#DCD4C0]/30 bg-[#1C2B39] text-[#F7F4EC]/70">
+      <footer className="border-t border-[#DCD4C0]/30 bg-[#0B1E2D] text-[#F7F4EC]/70">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[#F7F4EC]" style={{ fontFamily: 'var(--font-display)' }}>
-              IELTS Try Again
-            </p>
-            <p className="mt-1 text-xs">Practice that keeps up with you.</p>
+            <Link href="/" className="inline-block rounded-sm bg-white px-3 py-2">
+              <Image
+                src="/try-again-logo.png"
+                alt="Try Again — Yours IELTS partner"
+                width={150}
+                height={49}
+                className="h-9 w-auto object-contain"
+              />
+            </Link>
+            <p className="mt-2 text-xs">Yours IELTS partner — Practice that keeps up with you.</p>
           </div>
           <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
             {NAV_LINKS.map((l) => (
@@ -413,8 +427,8 @@ export default function LandingPage() {
           </nav>
         </div>
         <div className="border-t border-[#F7F4EC]/10 px-6 py-5 text-center text-xs">
-          © {new Date().getFullYear()} IELTS Try Again. Not affiliated with IDP, British Council or Cambridge
-          Assessment English.
+          © {new Date().getFullYear()} Try Again (Yours IELTS Partner). Not affiliated with IDP, British Council or
+          Cambridge Assessment English.
         </div>
       </footer>
     </div>
@@ -438,7 +452,7 @@ function AttemptSlip({
 }) {
   return (
     <div
-      className={`attempt-slip rounded-sm border border-[#DCD4C0] bg-[#FCFBF6] p-5 shadow-[0_6px_16px_-8px_rgba(28,43,57,0.25)] ${className}`}
+      className={`attempt-slip rounded-sm border border-[#DCD4C0] bg-[#FCFBF6] p-5 shadow-[0_6px_16px_-8px_rgba(11,30,45,0.25)] ${className}`}
       style={{ transform: `rotate(${rotate})`, animationDelay: delay }}
     >
       <p className="text-xs text-[#4B5B6B]">{attempt}</p>
@@ -449,12 +463,12 @@ function AttemptSlip({
         <span className="text-xs text-[#4B5B6B]">estimated band</span>
       </div>
       {marked === 'cross' && (
-        <svg viewBox="0 0 40 40" className="absolute -right-2 -top-2 size-10 text-[#BD3B3B]" aria-hidden>
+        <svg viewBox="0 0 40 40" className="absolute -right-2 -top-2 size-10 text-[#E10A23]" aria-hidden>
           <path d="M8 8 L32 32 M32 8 L8 32" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         </svg>
       )}
       {marked === 'circle' && (
-        <svg viewBox="0 0 60 36" className="absolute -right-3 -top-3 size-14 text-[#1C2B39]" aria-hidden>
+        <svg viewBox="0 0 60 36" className="absolute -right-3 -top-3 size-14 text-[#0B1E2D]" aria-hidden>
           <ellipse cx="30" cy="18" rx="27" ry="15" stroke="currentColor" strokeWidth="2" fill="none" />
         </svg>
       )}

@@ -16,13 +16,16 @@ import {
   READING_QUESTION_TYPES,
   TASKS_PER_TYPE,
 } from '@/lib/question-types';
+import { DIFFICULTIES } from '@/lib/speaking-config';
+import { WRITING_CATEGORIES, WRITING_PARTS } from '@/lib/writing-config';
 import { PageHeader } from '@/components/admin/ui';
 import { getAdminContext } from '@/lib/admin-auth';
 
-function tally(docs: QueryDocumentSnapshot[]) {
+function tally(docs: QueryDocumentSnapshot[], field: string) {
   const counts: Record<string, number> = {};
   for (const d of docs) {
-    const type = d.get('questionType') as string;
+    const type = d.get(field);
+    if (typeof type !== 'string') continue;
     counts[type] = (counts[type] ?? 0) + 1;
   }
   return counts;
@@ -86,11 +89,15 @@ function CoveragePanel({
   href,
   types,
   counts,
+  targets,
+  labels,
 }: {
   title: string;
   href: string;
   types: readonly string[];
   counts: Record<string, number>;
+  targets?: Record<string, number>;
+  labels?: Record<string, string>;
 }) {
   const names = [...types, ...Object.keys(counts).filter((n) => !types.includes(n))];
   const total = names.reduce((sum, n) => sum + (counts[n] ?? 0), 0);
@@ -114,28 +121,29 @@ function CoveragePanel({
       <ul className="mt-5 space-y-3.5">
         {names.map((name) => {
           const n = counts[name] ?? 0;
-          const full = n >= TASKS_PER_TYPE;
+          const target = targets?.[name] ?? TASKS_PER_TYPE;
+          const full = n >= target;
           return (
             <li key={name}>
               <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate">{name}</span>
+                <span className="truncate">{labels?.[name] ?? name}</span>
                 <span
                   className={`shrink-0 text-xs tabular-nums ${n === 0 ? 'text-destructive' : 'text-muted-foreground'}`}
                 >
-                  {n === 0 ? 'No tasks' : `${n} / ${TASKS_PER_TYPE}`}
+                  {n === 0 ? 'No tasks' : `${n} / ${target}`}
                 </span>
               </div>
               <div
                 className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
                 role="progressbar"
-                aria-label={`${name} tasks`}
+                aria-label={`${labels?.[name] ?? name} tasks`}
                 aria-valuenow={n}
                 aria-valuemin={0}
-                aria-valuemax={TASKS_PER_TYPE}
+                aria-valuemax={target}
               >
                 <div
                   className={`h-full rounded-full ${full ? 'bg-emerald-500' : 'bg-foreground'}`}
-                  style={{ width: `${Math.min(100, (n / TASKS_PER_TYPE) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (n / target) * 100)}%` }}
                 />
               </div>
             </li>
@@ -154,8 +162,8 @@ export default async function AdminHomePage() {
     listeningSnap,
     attemptsCount,
     studentStats,
-    writingCount,
-    speakingCount,
+    writingSnap,
+    speakingSnap,
   ] = await Promise.all([
     adminDb.collection('readingTasks').select('questionType').get(),
     adminDb.collection('listeningTasks').select('questionType').get(),
@@ -166,8 +174,8 @@ export default async function AdminHomePage() {
           adminDb.collection('students').where('accountStatus', '==', 'active').count().get(),
         ]).then(([total, active]) => ({ total: total.data().count, active: active.data().count }))
       : Promise.resolve(null),
-    adminDb.collection('writingPrompts').count().get(),
-    adminDb.collection('speakingPrompts').count().get(),
+    adminDb.collection('writingPrompts').select('category').get(),
+    adminDb.collection('speakingPrompts').select('difficulty').get(),
   ]);
 
   const totalStudents = studentStats?.total ?? 0;
@@ -184,8 +192,8 @@ export default async function AdminHomePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard icon={BookOpen} label="Reading tasks" value={readingSnap.size} href="/admin/content/reading" />
         <StatCard icon={Headphones} label="Listening tasks" value={listeningSnap.size} href="/admin/content/listening" />
-        <StatCard icon={PenLine} label="Writing tasks" value={writingCount.data().count} href="/admin/content/writing" />
-        <StatCard icon={Mic} label="Speaking tasks" value={speakingCount.data().count} href="/admin/content/speaking" />
+        <StatCard icon={PenLine} label="Writing tasks" value={writingSnap.size} href="/admin/content/writing" />
+        <StatCard icon={Mic} label="Speaking tasks" value={speakingSnap.size} href="/admin/content/speaking" />
         <StatCard icon={Activity} label="Attempts so far" value={attemptsCount.data().count} />
         {admin.role === 'PRIMARY_ADMIN' && (
           <StatCard
@@ -203,13 +211,30 @@ export default async function AdminHomePage() {
           title="Reading coverage"
           href="/admin/content/reading"
           types={READING_QUESTION_TYPES}
-          counts={tally(readingSnap.docs)}
+          counts={tally(readingSnap.docs, 'questionType')}
         />
         <CoveragePanel
           title="Listening coverage"
           href="/admin/content/listening"
           types={LISTENING_QUESTION_TYPES}
-          counts={tally(listeningSnap.docs)}
+          counts={tally(listeningSnap.docs, 'questionType')}
+        />
+        <CoveragePanel
+          title="Writing coverage"
+          href="/admin/content/writing"
+          types={WRITING_CATEGORIES.map(({ name }) => name)}
+          counts={tally(writingSnap.docs, 'category')}
+          targets={Object.fromEntries(
+            WRITING_CATEGORIES.map(({ name, part }) => [name, WRITING_PARTS[part].perCategory]),
+          )}
+        />
+        <CoveragePanel
+          title="Speaking coverage"
+          href="/admin/content/speaking"
+          types={DIFFICULTIES.map(({ key }) => key)}
+          counts={tally(speakingSnap.docs, 'difficulty')}
+          targets={Object.fromEntries(DIFFICULTIES.map(({ key, target }) => [key, target]))}
+          labels={Object.fromEntries(DIFFICULTIES.map(({ key, label }) => [key, label]))}
         />
       </div>
     </>

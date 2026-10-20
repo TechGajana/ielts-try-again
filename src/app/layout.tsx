@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
-const SITE_URL = 'https://ieltstryagain.com';
-const SITE_NAME = 'Try Again — Yours IELTS Partner';
+// Matches the indexed URL in your Google Search screenshot
+const SITE_URL = 'https://www.ieltstryagain.com';
+const SITE_NAME = 'IELTS Try Again';
 const LOGO_PATH = '/try-again-logo.png';
 const DESCRIPTION =
   'Practice real IELTS-style Listening, Reading, Writing and Speaking tasks, get an examiner-style AI band after every attempt, and try again before the real test.';
@@ -10,7 +11,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | IELTS practice with AI band feedback`,
+    default: `${SITE_NAME} — IELTS practice with AI band feedback`,
     template: `%s · ${SITE_NAME}`,
   },
   description: DESCRIPTION,
@@ -23,7 +24,6 @@ export const metadata: Metadata = {
     'IELTS reading practice',
     'IELTS listening practice',
     'AI IELTS evaluation',
-    'Try Again IELTS',
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
@@ -43,11 +43,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: LOGO_PATH, type: 'image/png' },
+      { url: '/icon', type: 'image/png', sizes: '192x192' },
+      { url: '/favicon.ico', sizes: '48x48' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    shortcut: '/icon',
+    apple: [{ url: '/icon', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
     type: 'website',
@@ -61,12 +61,6 @@ export const metadata: Metadata = {
         url: LOGO_PATH,
         width: 1200,
         height: 400,
-        alt: `${SITE_NAME} Logo`,
-      },
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
         alt: SITE_NAME,
       },
     ],
@@ -76,10 +70,6 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — IELTS practice with AI band feedback`,
     description: DESCRIPTION,
     images: [LOGO_PATH],
-  },
-  // Fill these in once you register with each service; remove any you don't use.
-  verification: {
-    google: '',
   },
 };
 
@@ -92,23 +82,30 @@ export const viewport: Viewport = {
   ],
 };
 
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'EducationalOrganization',
-  name: 'Try Again',
-  alternateName: SITE_NAME,
-  slogan: 'Yours IELTS partner',
-  url: SITE_URL,
-  logo: {
-    '@type': 'ImageObject',
-    url: `${SITE_URL}${LOGO_PATH}`,
-    width: 1200,
-    height: 400,
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    alternateName: 'Try Again — Yours IELTS Partner',
+    url: SITE_URL,
   },
-  image: `${SITE_URL}${LOGO_PATH}`,
-  description: DESCRIPTION,
-  sameAs: [],
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/icon`,
+      width: 192,
+      height: 192,
+    },
+    image: `${SITE_URL}${LOGO_PATH}`,
+    description: DESCRIPTION,
+    sameAs: [],
+  },
+];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

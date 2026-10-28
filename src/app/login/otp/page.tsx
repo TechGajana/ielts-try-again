@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, CircleAlert, GraduationCap, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, CircleAlert, LoaderCircle } from 'lucide-react';
 import { loginStep2 } from '../actions';
 
 const OTP_LENGTH = 6;
@@ -10,14 +11,16 @@ const OTP_LENGTH = 6;
 // Half-band steps from 5.0 to 9.0, used for the decorative ruler
 const BANDS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
 
-function BrandMark({ className = '' }: { className?: string }) {
+function Logo({ className = '' }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <div className="flex size-9 items-center justify-center rounded-lg bg-current/10 ring-1 ring-current/20">
-        <GraduationCap className="size-5" aria-hidden />
-      </div>
-      <span className="text-base font-medium tracking-tight">IELTS Try Again</span>
-    </div>
+    <Image
+      src="/try-again-logo.png"
+      alt="Try Again – Your IELTS partner"
+      width={2170}
+      height={720}
+      priority
+      className={`h-auto ${className}`}
+    />
   );
 }
 
@@ -48,22 +51,49 @@ export default function OtpPage() {
   const activeIndex = Math.min(otp.length, OTP_LENGTH - 1);
 
   return (
-    <main className="grid min-h-svh bg-background text-foreground lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <main className="grid min-h-svh bg-[#F6F7F9] text-[#12233A] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       {/* ───────── Brand panel (desktop only) ───────── */}
-      <aside className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        {/* Soft light bloom */}
+      <aside className="relative hidden overflow-hidden bg-[#12233A] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        {/* Red glow */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-32 -top-32 size-[28rem] rounded-full bg-primary-foreground/10 blur-3xl"
+          className="pointer-events-none absolute -right-32 -top-32 size-[28rem] rounded-full bg-[#E0002B]/20 blur-3xl"
         />
 
-        <BrandMark className="relative" />
+        {/* Flight-path trail, echoing the logo */}
+        <svg
+          aria-hidden
+          viewBox="0 0 600 800"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-0 size-full"
+        >
+          <defs>
+            <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stopColor="#E0002B" stopOpacity="0" />
+              <stop offset="1" stopColor="#E0002B" stopOpacity="0.9" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M-20 780 C 180 640, 360 360, 640 120"
+            fill="none"
+            stroke="url(#trail)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+
+        {/* Logo on a white card so it keeps its original colors */}
+        <div className="relative w-fit rounded-2xl bg-white p-5 shadow-lg">
+          <Logo className="w-56" />
+        </div>
 
         <div className="relative max-w-md">
-          <h2 className="font-serif text-4xl leading-[1.12] tracking-tight text-balance xl:text-5xl">
+          <span className="mb-6 block h-1 w-12 rounded-full bg-[#E0002B]" aria-hidden />
+          <h2 className="text-4xl font-bold leading-[1.12] tracking-tight text-balance xl:text-5xl">
             One last check before you start practicing.
           </h2>
-          <p className="mt-5 max-w-sm text-base leading-relaxed text-primary-foreground/70">
+          <p className="mt-5 max-w-sm text-base leading-relaxed text-white/70">
             This extra step keeps your account and your attempts private to you.
           </p>
         </div>
@@ -78,7 +108,7 @@ export default function OtpPage() {
                 className="flex w-6 flex-col items-center gap-2"
                 style={{ opacity: 0.3 + (i / (BANDS.length - 1)) * 0.7 }}
               >
-                <span className={`w-px bg-primary-foreground ${whole ? 'h-9' : 'h-5'}`} />
+                <span className={`w-px bg-white ${whole ? 'h-9' : 'h-5'}`} />
                 <span className="h-4 text-xs tabular-nums">{whole ? band.toFixed(1) : ''}</span>
               </div>
             );
@@ -88,18 +118,19 @@ export default function OtpPage() {
 
       {/* ───────── Form panel ───────── */}
       <section className="flex flex-col px-6 py-8 sm:px-12">
-        <BrandMark className="lg:hidden" />
+        {/* Logo on mobile; multiply blend lets its white background melt into the page */}
+        <Logo className="w-44 mix-blend-multiply lg:hidden" />
 
         <div className="flex flex-1 items-center justify-center py-10">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
             {/* Step 2 of 2 */}
             <div className="mb-8 flex items-center gap-2" role="img" aria-label="Step 2 of 2">
-              <span className="h-1 w-10 rounded-full bg-primary" />
-              <span className="h-1 w-10 rounded-full bg-primary" />
+              <span className="h-1 w-10 rounded-full bg-[#E0002B]" />
+              <span className="h-1 w-10 rounded-full bg-[#E0002B]" />
             </div>
 
-            <h1 className="font-serif text-3xl tracking-tight sm:text-4xl">Check your email</h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Check your email</h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-500">
               Enter the {OTP_LENGTH}-digit code we sent to your email to finish signing in.
             </p>
 
@@ -111,7 +142,7 @@ export default function OtpPage() {
 
                 {/* One real input (handles typing, paste and autofill) drawn as separate digit boxes */}
                 <div className="relative">
-                  <div className="flex gap-2 sm:gap-3" aria-hidden>
+                  <div className="flex gap-2 sm:gap-2.5" aria-hidden>
                     {Array.from({ length: OTP_LENGTH }).map((_, i) => {
                       const char = otp[i] ?? '';
                       const isActive = focused && !loading && i === activeIndex;
@@ -119,15 +150,15 @@ export default function OtpPage() {
                         <div
                           key={i}
                           className={
-                            'relative flex h-14 min-w-0 flex-1 items-center justify-center rounded-lg border bg-background text-2xl font-medium tabular-nums shadow-xs transition-[border-color,box-shadow] ' +
-                            (error ? 'border-destructive/50 ' : 'border-input ') +
-                            (isActive ? 'border-ring ring-[3px] ring-ring/40 ' : '') +
+                            'relative flex h-14 min-w-0 flex-1 items-center justify-center rounded-lg border bg-white text-2xl font-semibold tabular-nums text-[#12233A] shadow-xs transition-[border-color,box-shadow] ' +
+                            (error ? 'border-[#E0002B]/50 ' : 'border-slate-300 ') +
+                            (isActive ? 'border-[#E0002B] ring-[3px] ring-[#E0002B]/25 ' : '') +
                             (loading ? 'opacity-60' : '')
                           }
                         >
                           {char}
                           {isActive && !char && (
-                            <span className="h-6 w-px animate-pulse bg-foreground motion-reduce:animate-none" />
+                            <span className="h-6 w-px animate-pulse bg-[#E0002B] motion-reduce:animate-none" />
                           )}
                         </div>
                       );
@@ -158,7 +189,7 @@ export default function OtpPage() {
                 <div
                   id="otp-error"
                   role="alert"
-                  className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-3 text-sm text-destructive"
+                  className="flex items-start gap-2.5 rounded-lg border border-[#E0002B]/20 bg-[#E0002B]/10 px-3.5 py-3 text-sm text-[#B0001F]"
                 >
                   <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                   <p>{error}</p>
@@ -168,7 +199,7 @@ export default function OtpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#E0002B] text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#C20026] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#E0002B]/40 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? (
                   <>
@@ -183,7 +214,7 @@ export default function OtpPage() {
 
             <Link
               href="/login"
-              className="mt-6 inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-sm text-sm text-slate-500 transition-colors hover:text-[#12233A] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#E0002B]/30"
             >
               <ArrowLeft className="size-4" aria-hidden />
               Back to login
